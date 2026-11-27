@@ -65,7 +65,6 @@ Main problems: global mutable state, HTML built as strings with `innerHTML` (esc
 | Hosting | Any static host (GitHub Pages / Netlify / Cloudflare Pages). `dist/` is the artifact | No server needed |
 
 Browser support: the last 2 versions of evergreen browsers, plus iOS Safari 16+ (the site is used on phones).
-
 ---
 
 ## 4. Target architecture

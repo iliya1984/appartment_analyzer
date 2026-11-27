@@ -1,0 +1,67 @@
+/* Design tokens, copied verbatim from the legacy site. Light by default; dark follows the OS. */
+:root {
+  --bg: #ebf0f2;
+  --surface: #ffffff;
+  --surface2: #f3f7f8;
+  --ink: #10242c;
+  --muted: #586f79;
+  --line: #d3dde1;
+  --sea: #0a6c86;
+  --sea-ink: #ffffff;
+  --sea-soft: #d9eef4;
+  --sun: #e59b0b;
+  --sun-soft: #fbebc8;
+  --good: #146c43; /* legacy #17804F darkened for WCAG AA contrast on --good-soft */
+  --good-soft: #d8f0e3;
+  --bad: #b93434;
+  --bad-soft: #f8dede;
+  --warn: #9a5b00;
+  --warn-soft: #fbebc8;
+  --font-d: 'Frank Ruhl Libre', 'David Libre', Georgia, serif;
+  --font-b: 'Assistant', 'Heebo', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #0b161b;
+    --surface: #13232a;
+    --surface2: #1a2e37;
+    --ink: #e5eff2;
+    --muted: #93a9b2;
+    --line: #27414c;
+    --sea: #4cbcd9;
+    --sea-ink: #06242d;
+    --sea-soft: #17414d;
+    --sun: #f2b33d;
+    --sun-soft: #4a3a12;
+    --good: #4cc58b;
+    --good-soft: #163d2d;
+    --bad: #f07c7c;
+    --bad-soft: #4a2020;
+    --warn: #f2b33d;
+    --warn-soft: #4a3a12;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme='dark'] {
+  --bg: #0b161b;
+  --surface: #13232a;
+  --surface2: #1a2e37;
+  --ink: #e5eff2;
+  --muted: #93a9b2;
+  --line: #27414c;
+  --sea: #4cbcd9;
+  --sea-ink: #06242d;
+  --sea-soft: #17414d;
+  --sun: #f2b33d;
+  --sun-soft: #4a3a12;
+  --good: #4cc58b;
+  --good-soft: #163d2d;
+  --bad: #f07c7c;
+  --bad-soft: #4a2020;
+  --warn: #f2b33d;
+  --warn-soft: #4a3a12;
+  color-scheme: dark;
+}

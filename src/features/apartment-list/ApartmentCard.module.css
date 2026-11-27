@@ -1,0 +1,67 @@
+.cards {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+}
+.card {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 13px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: start;
+  border-inline-start: 5px solid var(--sea);
+}
+.free {
+  border-inline-start-color: var(--sun);
+}
+.card:hover {
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.09);
+}
+.card:has(.open:focus-visible) {
+  outline: 3px solid var(--sea);
+  outline-offset: 2px;
+}
+.top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+/* Stretched link: the whole card opens the apartment; the star sits above it. */
+.open {
+  font-weight: 700;
+  color: inherit;
+  text-decoration: none;
+}
+.open:focus-visible {
+  outline: none;
+}
+.open::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+.star {
+  position: relative;
+  z-index: 1;
+}
+.price {
+  font-family: var(--font-d);
+  font-weight: 900;
+  font-size: 28px;
+  line-height: 1;
+}
+.sub {
+  color: var(--muted);
+  font-size: 14px;
+  margin-top: 4px;
+}
+.more {
+  display: block;
+  margin: 16px auto 0;
+}
