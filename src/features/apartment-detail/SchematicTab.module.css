@@ -1,0 +1,16 @@
+.controls {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+}
+.smallLabel {
+  font-size: 13px;
+}
+.readout {
+  font-size: 14px;
+  color: var(--muted);
+  margin: 0;
+}
+.readout b {
+  color: var(--ink);
+}

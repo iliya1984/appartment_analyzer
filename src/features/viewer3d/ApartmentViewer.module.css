@@ -1,0 +1,29 @@
+.stage {
+  position: relative;
+  background: #cfe3ea;
+  border-radius: 12px;
+  overflow: hidden;
+  touch-action: none;
+  min-height: 280px;
+}
+.stage canvas {
+  display: block;
+  width: 100%;
+  touch-action: none;
+}
+.hint {
+  position: absolute;
+  inset-inline-start: 10px;
+  bottom: 8px;
+  font-size: 12px;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.45);
+  padding: 3px 8px;
+  border-radius: 7px;
+  pointer-events: none;
+}
+.message {
+  padding: 16px;
+  margin: 0;
+  line-height: 1.45;
+}
