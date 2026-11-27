@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>בוחר דירות אלמוגים</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&family=Frank+Ruhl+Libre:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: the project's own aerial render is the page's map; tap a building to see every floor and unit, then drill into one apartment. */
+:root{
+  --bg:#EBF0F2; --surface:#FFFFFF; --surface2:#F3F7F8; --ink:#10242C; --muted:#586F79; --line:#D3DDE1;
+  --sea:#0A6C86; --sea-ink:#FFFFFF; --sea-soft:#D9EEF4; --sun:#E59B0B; --sun-soft:#FBEBC8;
+  --good:#17804F; --good-soft:#D8F0E3; --bad:#B93434; --bad-soft:#F8DEDE; --warn:#9A5B00; --warn-soft:#FBEBC8;
+  --font-d:'Frank Ruhl Libre','David Libre',Georgia,serif; --font-b:'Assistant','Heebo',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0B161B; --surface:#13232A; --surface2:#1A2E37; --ink:#E5EFF2; --muted:#93A9B2; --line:#27414C;
+    --sea:#4CBCD9; --sea-ink:#06242D; --sea-soft:#17414D; --sun:#F2B33D; --sun-soft:#4A3A12;
+    --good:#4CC58B; --good-soft:#163D2D; --bad:#F07C7C; --bad-soft:#4A2020; --warn:#F2B33D; --warn-soft:#4A3A12;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0B161B; --surface:#13232A; --surface2:#1A2E37; --ink:#E5EFF2; --muted:#93A9B2; --line:#27414C;
+  --sea:#4CBCD9; --sea-ink:#06242D; --sea-soft:#17414D; --sun:#F2B33D; --sun-soft:#4A3A12;
+  --good:#4CC58B; --good-soft:#163D2D; --bad:#F07C7C; --bad-soft:#4A2020; --warn:#F2B33D; --warn-soft:#4A3A12;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-b);font-size:16px;line-height:1.45;-webkit-text-size-adjust:100%}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--sea);outline-offset:2px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 16px 48px}
+h1,h2,h3{font-family:var(--font-d);text-wrap:balance;margin:0;line-height:1.15}
+.num{font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+
+.top{padding:22px 0 14px;display:flex;flex-wrap:wrap;gap:12px 20px;align-items:flex-end;justify-content:space-between}
+.brand h1{font-size:clamp(34px,8vw,56px);font-weight:900;letter-spacing:-.5px}
+.brand h1 span{color:var(--sea)}
+.brand p{margin:6px 0 0;color:var(--muted)}
+.tabs{display:flex;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:4px}
+.tab{border:0;background:transparent;padding:9px 14px;border-radius:9px;font-weight:600;color:var(--muted);display:flex;gap:6px;align-items:center}
+.tab[aria-selected="true"]{background:var(--sea);color:var(--sea-ink)}
+.badge{background:var(--sun);color:#1b1200;border-radius:99px;font-size:12px;padding:1px 7px;font-weight:700}
+
+.notice{background:var(--sea-soft);color:var(--ink);border:1px solid var(--sea);border-radius:12px;padding:10px 14px;margin:0 0 14px;display:flex;gap:10px;align-items:flex-start;font-size:14px}
+.notice button{margin-inline-start:auto;border:0;background:transparent;font-size:20px;line-height:1;color:var(--muted);padding:2px 6px}
+.banner{background:var(--warn-soft);border:1px solid var(--sun);border-radius:12px;padding:9px 12px;font-size:14px;margin-bottom:10px}
+
+/* site map */
+.map{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:14px}
+.map-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.map-head h2{font-size:22px}
+#siteMap{overflow-x:auto;border-radius:12px}
+.site{position:relative;border-radius:12px;overflow:hidden;line-height:0;background:#cfd8dc;min-width:780px}
+.site img{width:100%;height:auto;display:block}
+.site svg{position:absolute;inset:0;width:100%;height:100%}
+.site .hs{cursor:pointer}
+.site .hs .dim{fill:rgba(8,18,24,.62)}
+.site .hs .ring{fill:transparent;stroke:transparent;stroke-width:3}
+.site .hs:hover .ring,.site .hs:focus-visible .ring{stroke:#fff}
+.site .hs.sel .ring{stroke:var(--sun);stroke-width:5}
+.site .bd rect{fill:var(--sea)}
+.site .bd text{fill:var(--sea-ink);font-size:17px;font-weight:700;font-family:var(--font-b);text-anchor:middle}
+.site .hs.sel .bd rect{fill:var(--sun)}
+.site .hs.sel .bd text{fill:#1b1200}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin-top:8px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-inline-end:5px;vertical-align:-1px}
+.elev{margin-top:12px;border-top:1px solid var(--line);padding-top:12px}
+.elev h3{font-size:19px;margin-bottom:2px}
+.elev .grid{display:grid;gap:4px;margin-top:10px;overflow-x:auto;padding-bottom:4px}
+.erow{display:flex;gap:4px;align-items:stretch}
+.efl{width:68px;white-space:nowrap;flex:none;font-size:13px;color:var(--muted);display:flex;align-items:center;justify-content:flex-end;padding-inline-end:8px}
+.tile{width:56px;min-height:38px;flex:none;border-radius:8px;border:2px solid transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:12px;line-height:1.15;padding:2px}
+.tile b{font-size:14px}
+.tile.m.target{background:var(--sea);color:var(--sea-ink)}
+.tile.m.free{background:var(--sun);color:#1b1200}
+.tile.x{background:var(--surface2);color:var(--muted);border-color:var(--line)}
+.tile.fav{border-color:var(--ink)}
+.tile:hover{filter:brightness(1.08)}
+
+/* filters */
+.filters{background:var(--surface);border:1px solid var(--line);border-radius:16px;margin-bottom:14px}
+.filters>summary{list-style:none;cursor:pointer;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;font-weight:700}
+.filters>summary::-webkit-details-marker{display:none}
+.filters>summary .count{font-weight:400;color:var(--muted)}
+.fgrid{padding:0 16px 16px;display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+.fld .l{display:block;font-size:13px;color:var(--muted);margin-bottom:5px;font-weight:600}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.inp{width:100%;background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:9px 11px;min-height:42px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:var(--surface2);border-radius:99px;padding:7px 12px;font-size:14px;min-height:38px}
+.chip[aria-pressed="true"]{background:var(--sea);color:var(--sea-ink);border-color:var(--sea);font-weight:700}
+.factions{padding:0 16px 16px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.btn{border:1px solid var(--line);background:var(--surface2);border-radius:10px;padding:9px 14px;font-weight:600;min-height:42px}
+.btn.pri{background:var(--sea);color:var(--sea-ink);border-color:var(--sea)}
+.btn:disabled{opacity:.5;cursor:default}
+
+/* list */
+.listhead{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:18px 0 10px;flex-wrap:wrap}
+.listhead h2{font-size:24px}
+.cards{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:13px 14px;cursor:pointer;display:flex;flex-direction:column;gap:8px;text-align:start;border-inline-start:5px solid var(--sea)}
+.card.free{border-inline-start-color:var(--sun)}
+.card:hover{box-shadow:0 4px 18px rgba(0,0,0,.09)}
+.c-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.c-id{font-weight:700}
+.c-price{font-family:var(--font-d);font-weight:900;font-size:28px;line-height:1}
+.c-sub{color:var(--muted);font-size:14px;margin-top:4px}
+.tags{display:flex;flex-wrap:wrap;gap:5px}
+.tag{font-size:12.5px;border-radius:7px;padding:2px 8px;background:var(--surface2);border:1px solid var(--line);color:var(--ink)}
+.tag.good{background:var(--good-soft);color:var(--good);border-color:transparent;font-weight:700}
+.tag.bad{background:var(--bad-soft);color:var(--bad);border-color:transparent;font-weight:700}
+.tag.warn{background:var(--warn-soft);color:var(--warn);border-color:transparent;font-weight:700}
+.star{border:0;background:transparent;padding:6px;border-radius:8px;color:var(--muted);display:grid;place-items:center}
+.star svg{width:24px;height:24px}
+.star[aria-pressed="true"]{color:var(--sun)}
+.star[aria-pressed="true"] path{fill:currentColor}
+.more{display:block;margin:16px auto 0}
+.empty{padding:36px 16px;text-align:center;color:var(--muted);background:var(--surface);border:1px dashed var(--line);border-radius:14px}
+
+/* sheet */
+.sheet{position:fixed;inset:0;background:rgba(5,15,20,.55);z-index:50;display:none;align-items:flex-end;justify-content:center}
+.sheet.open{display:flex}
+.panel{background:var(--bg);width:min(100%,1000px);height:min(100%,94dvh);border-radius:18px 18px 0 0;display:flex;flex-direction:column;overflow:hidden}
+@media (min-width:900px){.sheet{align-items:center}.panel{border-radius:18px;height:min(92dvh,900px)}}
+.p-head{background:var(--surface);border-bottom:1px solid var(--line);padding:12px 16px;display:flex;gap:12px;align-items:center}
+.p-head .t{flex:1;min-width:0}
+.p-head h2{font-size:24px}
+.p-head .s{color:var(--muted);font-size:14px}
+.iconbtn{border:1px solid var(--line);background:var(--surface2);width:44px;height:44px;border-radius:12px;display:grid;place-items:center;font-size:20px}
+.ptabs{display:flex;gap:4px;padding:8px 12px;background:var(--surface);border-bottom:1px solid var(--line);overflow-x:auto}
+.ptab{border:0;background:transparent;padding:9px 14px;border-radius:9px;font-weight:600;color:var(--muted);white-space:nowrap}
+.ptab[aria-selected="true"]{background:var(--sea-soft);color:var(--sea)}
+.p-body{flex:1;overflow:auto;padding:14px 16px 24px}
+.sec{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+.sec h3{font-size:19px;margin-bottom:8px}
+.two{display:grid;gap:12px;grid-template-columns:1fr}
+@media (min-width:760px){.two{grid-template-columns:1.25fr 1fr}}
+
+.stage{position:relative;background:#cfe3ea;border-radius:12px;overflow:hidden;touch-action:none;min-height:280px}
+.stage canvas{display:block;width:100%;touch-action:none}
+.stage .hint{position:absolute;inset-inline-start:10px;bottom:8px;font-size:12px;color:#fff;background:rgba(0,0,0,.45);padding:3px 8px;border-radius:7px;pointer-events:none}
+.sunbar{display:grid;gap:10px;margin-top:10px}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg .chip{flex:1;text-align:center}
+input[type=range]{width:100%;accent-color:var(--sea);min-height:30px;direction:ltr}
+.sunread{font-size:14px;color:var(--muted)}
+.sunread b{color:var(--ink)}
+table.tbl{width:100%;border-collapse:collapse;font-size:14px}
+.tbl th,.tbl td{padding:7px 6px;border-bottom:1px solid var(--line);text-align:start}
+.tbl th{color:var(--muted);font-weight:600;font-size:13px}
+.tbl td.n{font-variant-numeric:tabular-nums}
+.tbl tr.me td{background:var(--sea-soft);font-weight:700}
+.tbl tr.go{cursor:pointer}
+.scroll{overflow-x:auto}
+
+.kpi{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));margin-bottom:12px}
+.kpi div{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.kpi small{display:block;color:var(--muted);font-size:12.5px}
+.kpi strong{font-family:var(--font-d);font-size:24px;font-weight:900}
+.ins{display:grid;gap:10px}
+.ins .it{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:12px;background:var(--surface2);border:1px solid var(--line)}
+.ins .it.warn{background:var(--warn-soft);border-color:var(--sun)}
+.ins .it.good{background:var(--good-soft);border-color:transparent}
+.ins .ic{font-size:20px;line-height:1.2}
+.ins h4{margin:0 0 2px;font-size:15px}
+.ins p{margin:0;font-size:14px;color:var(--muted)}
+.ins .it.warn p,.ins .it.good p{color:var(--ink)}
+.gauge{position:relative;height:12px;background:linear-gradient(270deg,var(--good-soft),var(--surface2),var(--bad-soft));border-radius:99px;margin:14px 0 6px;border:1px solid var(--line)}
+.gauge i{position:absolute;top:-5px;width:4px;height:20px;background:var(--ink);border-radius:2px;transform:translateX(-50%)}
+.gl{display:flex;justify-content:space-between;font-size:12px;color:var(--muted)}
+.facts{display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.facts div{background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.facts small{display:block;color:var(--muted);font-size:12.5px}
+.facts b{font-size:16px}
+
+.pr{display:grid;gap:10px}
+.pitem{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px;display:grid;gap:8px}
+.pi-top{display:flex;gap:10px;align-items:center}
+.rank{font-family:var(--font-d);font-weight:900;font-size:26px;width:36px;text-align:center;color:var(--sea)}
+.pi-main{flex:1;min-width:0;cursor:pointer}
+.pi-main b{display:block}
+.pi-btns{display:flex;gap:4px}
+.pi-btns button{width:40px;height:40px;border:1px solid var(--line);background:var(--surface2);border-radius:10px;font-size:16px}
+textarea.inp{min-height:62px;resize:vertical}
+.savestate{font-size:13px;color:var(--muted)}
+.foot{margin-top:28px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:14px}
+.toast{position:fixed;inset-inline:16px;bottom:18px;margin:auto;max-width:420px;background:var(--ink);color:var(--bg);padding:11px 14px;border-radius:12px;z-index:80;display:none;text-align:center;font-weight:600}
+.toast.on{display:block}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <h1>אלמוגים <span>חיפה</span></h1>
+      <p><span id="hdrStats" class="num"></span></p>
+    </div>
+    <div class="tabs" role="tablist" aria-label="תצוגות">
+      <button class="tab" role="tab" id="tabApts" aria-selected="true">דירות</button>
+      <button class="tab" role="tab" id="tabPrio" aria-selected="false">הרשימה שלי <span class="badge num" id="prioBadge">0</span></button>
+      <button class="tab" role="tab" id="tabData" aria-selected="false">נתונים</button>
+    </div>
+  </header>
+
+  <div class="notice" id="infoNotice" role="note">
+    <span aria-hidden="true">ℹ️</span>
+    <div>המחירים והשטחים לקוחים מקובץ המחירים של הקבלן. בקובץ אין מחיר לדירות השוק החופשי, וגם לא כיווני אוויר או מיקום הדירה בקומה, ולכן אינם מוצגים כנתון. ההדמיה התלת־ממדית סכמטית בלבד.</div>
+    <button id="noticeX" aria-label="סגירת ההודעה">×</button>
+  </div>
+
+  <main id="viewApts">
+    <section class="map" aria-label="מפת הפרויקט">
+      <div class="map-head">
+        <h2>מפת הפרויקט</h2>
+        <span class="muted num" id="mapCount"></span>
+      </div>
+      <div id="siteMap"></div>
+      <div class="legend">
+        <span>לחצו על בניין כדי לסנן אותו ולראות את כל הקומות</span>
+      </div>
+      <div class="elev" id="elev" hidden></div>
+    </section>
+
+    <details class="filters" id="filters" open>
+      <summary><span>סינון</span><span class="count num" id="fCount"></span></summary>
+      <div class="fgrid">
+        <div class="fld">
+          <span class="l">תקציב (באלפי ₪)</span>
+          <div class="row2">
+            <input class="inp num" id="fMin" type="number" inputmode="numeric" min="0" step="50" placeholder="מינימום" aria-label="תקציב מינימלי באלפי שקלים">
+            <input class="inp num" id="fMax" type="number" inputmode="numeric" min="0" step="50" placeholder="מקסימום" aria-label="תקציב מקסימלי באלפי שקלים">
+          </div>
+        </div>
+        <div class="fld"><span class="l">חדרים</span><div class="chips" id="fRooms"></div></div>
+        <div class="fld">
+          <span class="l">קומה</span>
+          <div class="row2">
+            <input class="inp num" id="fFmin" type="number" inputmode="numeric" placeholder="מקומה" aria-label="מקומה">
+            <input class="inp num" id="fFmax" type="number" inputmode="numeric" placeholder="עד קומה" aria-label="עד קומה">
+          </div>
+        </div>
+        <div class="fld"><span class="l">בניין</span><div class="chips" id="fBld"></div></div>
+        <div class="fld"><span class="l">סוג</span><div class="chips" id="fCat"></div></div>
+        <div class="fld"><span class="l">מאפיינים</span><div class="chips" id="fFlags"></div></div>
+        <div class="fld"><span class="l">קומת המחסן</span><div class="chips" id="fSto"></div></div>
+        <div class="fld">
+          <label class="l" for="fSort">מיון</label>
+          <select class="inp" id="fSort">
+            <option value="ppsqm">מחיר למ״ר: מהזול ליקר</option>
+            <option value="delta">הכי משתלם מול דירות דומות</option>
+            <option value="priceA">מחיר: מהזול ליקר</option>
+            <option value="priceD">מחיר: מהיקר לזול</option>
+            <option value="area">שטח: מהגדול לקטן</option>
+            <option value="floor">קומה: מהגבוהה לנמוכה</option>
+            <option value="id">בניין ומספר דירה</option>
+          </select>
+        </div>
+      </div>
+      <div class="factions"><button class="btn" id="fReset">ניקוי סינון</button></div>
+    </details>
+
+    <div class="listhead"><h2>דירות <span class="muted num" id="listN"></span></h2></div>
+    <div class="cards" id="cards"></div>
+    <button class="btn more" id="moreBtn" hidden>הצג עוד</button>
+  </main>
+
+  <main id="viewPrio" hidden>
+    <div class="listhead">
+      <h2>הרשימה שלי לפי עדיפות</h2>
+      <button class="btn pri" id="exportBtn">ייצוא לאקסל</button>
+    </div>
+    <p class="savestate" id="saveState"></p>
+    <div class="pr" id="prioList"></div>
+  </main>
+
+  <main id="viewData" hidden>
+    <div class="listhead"><h2>נתוני הפרויקט</h2></div>
+    <div class="sec">
+      <h3>מקור הנתונים</h3>
+      <p id="dataSrc" class="muted"></p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+        <label class="btn pri" for="xlsFile" style="display:inline-flex;align-items:center">טעינת קובץ מחירים מעודכן</label>
+        <input type="file" id="xlsFile" accept=".xlsx,.xls" hidden>
+        <button class="btn" id="resetBtn">חזרה לקובץ המובנה</button>
+      </div>
+      <p id="importMsg" class="muted" style="margin-top:10px"></p>
+    </div>
+    <div class="sec"><h3>סיכום לפי בניין</h3><div class="scroll" id="bldTable"></div></div>
+  </main>
+
+  <p class="foot">האתר הוא כלי עזר פרטי להמחשה בלבד, ללא אחריות. יש לוודא כל נתון מול המסמכים הרשמיים של הקבלן. מחיר למ״ר מחושב כמחיר הדירה חלקי שטח הדירה, ללא המרפסת או הגינה. "דירות דומות" הן דירות מאותה תוכנית (טיפוס תשריט), ואם יש פחות מארבע כאלה, דירות עם אותו מספר חדרים ואותו סוג. התמונה היא הדמיית הפרויקט.</p>
+</div>
+
+<div class="sheet" id="sheet" aria-hidden="true">
+  <div class="panel" role="dialog" aria-modal="true" aria-labelledby="pTitle">
+    <div class="p-head">
+      <button class="iconbtn star" id="pStar" aria-pressed="false" aria-label="הוספה לרשימה שלי"></button>
+      <div class="t"><h2 id="pTitle"></h2><div class="s" id="pSub"></div></div>
+      <button class="iconbtn" id="pClose" aria-label="סגירה">✕</button>
+    </div>
+    <div class="ptabs" role="tablist">
+      <button class="ptab" role="tab" data-t="ins">תובנות</button>
+      <button class="ptab" role="tab" data-t="bld">הבניין והקומה</button>
+      <button class="ptab" role="tab" data-t="3d">הדמיה סכמטית</button>
+    </div>
+    <div class="p-body" id="pBody"></div>
+  </div>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+'use strict';
+const RAW=[["A1",211,1,"T-T5A","A",1,5.0,125.89,29.5,5.8,2,1,1791623,"14","קרקע עליון"],["A1",211,2,"T-T3C","C*",1,3.0,84.97,23.46,8.64,2,1,1180991,"15","-2"],["A1",211,3,"T-T6D","D",1,6.0,156.88,56.9,6.52,2,1,2313459,"63","-1"],["A1",211,4,"T-T5E","AM",1,5.0,126.03,29.49,6.83,2,1,1799460,"13","קרקע עליון"],["A1",211,5,"T-T5A","A",2,5.0,125.92,29.5,6.25,2,1,1805583,"12","קרקע עליון"],["A1",211,6,"T-T3B","B",2,3.0,80.94,16.03,6.44,2,1,1101936,"11","קרקע עליון"],["A1",211,7,"T-T3C","C*",2,3.0,84.81,23.52,6.16,2,1,1173608,"10","קרקע עליון"],["A1",211,8,"T-T6D","D",2,6.0,156.88,56.91,5.59,2,1,2321550,"9","קרקע עליון"],["A1",211,9,"T-T5E","AM",2,5.0,126.03,29.49,5.59,2,1,1802995,"8","קרקע עליון"],["A1",211,10,"T-T5A","A",3,5.0,125.92,29.5,5.59,2,1,1812534,"7","קרקע עליון"],["A1",211,11,"T-T3B","B",3,3.0,80.94,16.03,5.59,2,1,1103566,"6","קרקע עליון"],["A1",211,12,"T-T3C","C*",3,3.0,84.81,23.52,5.59,2,1,1176953,"5","קרקע עליון"],["A1",211,13,"T-T6D","D",3,6.0,156.88,56.91,5.59,2,1,2335134,"4","קרקע עליון"],["A1",211,14,"T-T5E","AM",3,5.0,126.03,29.49,5.59,2,1,1813891,"3","קרקע עליון"],["A1",211,15,"T-T5A","A",4,5.0,125.92,29.5,5.59,2,1,1823423,"2","קרקע עליון"],["A1",211,16,"T-T3B","B",4,3.0,80.94,16.03,5.98,2,1,1111136,"1","קרקע עליון"],["A1",211,17,"T-T3C","C*",4,3.0,84.81,23.52,5.63,2,1,1183213,"17","קרקע עליון"],["A1",211,18,"T-T6D","D",4,6.0,156.88,56.91,5.2,2,1,2346365,"18","קרקע עליון"],["A1",211,19,"T-T5E","AM",4,5.0,126.03,29.49,5.17,2,1,1822255,"19","קרקע עליון"],["A1",211,20,"T-T5A","A",5,5.0,125.89,29.5,5.04,2,1,1830593,"20","קרקע עליון"],["A1",211,21,"T-T4.5C","C",5,4.5,114.94,22.97,5.04,2,1,1637029,"21","קרקע עליון"],["A1",211,22,"T-T3B","B",5,3.0,80.96,16.18,5.04,2,1,1113064,"22","קרקע עליון"],["A1",211,23,"T-T6D","D",5,6.0,156.9,56.91,4.62,2,1,2356679,"23","קרקע עליון"],["A1",211,24,"T-T5E","AM",5,5.0,126.03,29.49,7.54,2,1,1847502,"24","קרקע עליון"],["A1",211,25,"T-T5A","A",6,5.0,125.89,29.5,7.17,2,1,1854438,"25","קרקע עליון"],["A1",211,26,"T-T4.5C","C",6,4.5,114.94,22.97,6.58,2,1,1656293,"26","קרקע עליון"],["A1",211,27,"T-T3B","B",6,3.0,80.96,16.18,6.01,2,1,1123470,"27","קרקע עליון"],["A1",211,28,"T-T6D","D",6,6.0,156.9,56.91,8.23,2,1,2392223,"28","קרקע עליון"],["A1",211,29,"T-T5E","AM",6,5.0,126.03,29.49,5.82,2,1,1847981,"37","קרקע עליון"],["A1",211,30,"T-T5A","A",7,5.0,125.89,29.5,5.64,2,1,1856007,"36","קרקע עליון"],["A1",211,31,"T-T4.5C","C",7,4.5,114.94,22.97,7.81,2,1,1673754,"35","קרקע עליון"],["A1",211,32,"T-T3B","B",7,3.0,80.96,16.18,5.38,2,1,1126087,"32","קרקע עליון"],["A1",211,33,"T-T6D","D",7,6.0,156.9,56.91,5.33,2,1,2388135,"31","קרקע עליון"],["A1",211,34,"T-T5E","AM",7,5.0,126.03,29.49,6.82,2,1,1865007,"29","קרקע עליון"],["A1",211,35,"T-T5A","A",8,5.0,125.89,29.5,5.97,2,1,1868927,"30","קרקע עליון"],["A1",211,36,"T-T4.5C","C",8,4.5,114.89,22.97,5.91,2,1,1671262,"(A1) 77","-2"],["A1",211,37,"T-T3B","B",8,3.0,80.91,15.99,6.46,2,1,1135774,"57","-1"],["A1",211,38,"T-T6D","D",8,6.0,157.0,57.6,7.09,2,0,null,"33","-2"],["A1",211,39,"T-T5E","AM",8,5.0,126.03,29.49,6.21,2,1,1872188,"55","קרקע תחתון"],["A1",211,40,"T-T5A","A",9,5.0,125.89,29.5,5.28,2,1,1875559,"(B6)7","-1"],["A1",211,41,"T-T4.5C","C",9,4.5,114.89,22.97,8.15,2,1,1695020,"(B6) 8","-1"],["A1",211,42,"T-T3B","B",9,3.0,80.91,15.99,5.88,2,1,1138612,"58","-1"],["A1",211,43,"T-T6D","D",9,6.0,157.0,57.6,6.56,2,0,null,"79","-2"],["A1",211,44,"T-T5E","AM",9,5.0,126.03,29.49,6.3,2,1,1883660,"80","-2"],["A1",211,45,"T-T5A","A",10,5.0,125.89,29.5,6.3,2,1,1892776,"81","-2"],["A1",211,46,"T-T4.5C","C",10,4.5,114.89,22.97,5.88,2,1,1690887,"62","-1"],["A1",211,47,"T-T3B","B",10,3.0,80.91,15.99,6.83,2,1,1149029,"56","קרקע תחתון"],["A1",211,48,"T-T6D","D",10,6.0,157.0,57.6,6.01,2,0,null,"76","-2"],["A1",211,49,"T-T5E","AM",10,5.0,126.03,29.49,5.88,2,1,1891968,"59","-1"],["A1",211,50,"T-T5A","A",11,5.0,125.89,29.5,6.07,2,1,1902249,"75","-2"],["A1",211,51,"T-T4.5C","C",11,4.5,114.89,22.97,6.07,2,1,1701979,"74","-2"],["A1",211,52,"T-T3B","B",11,3.0,80.91,15.99,6.07,2,1,1150948,"73","-2"],["A1",211,53,"T-T6D","D",11,6.0,157.0,57.6,6.07,2,0,null,"72","-2"],["A1",211,54,"T-T5E","AM",11,5.0,126.03,29.49,5.88,2,1,1902873,"60","-1"],["A1",211,55,"T-T5A","A",12,5.0,125.89,29.5,7.66,2,1,1923131,"13(B6)","-1"],["A1",211,56,"T-T4.5C","C",12,4.5,114.89,22.97,5.69,2,1,1709504,"64","-1"],["A1",211,57,"T-T3B","B",12,3.0,80.91,15.99,6.86,2,1,1160613,"69","-2"],["A1",211,58,"T-T6D","D",12,6.0,157.0,57.6,7.24,2,0,null,"68","-2"],["A1",211,59,"T-T5E","AM",12,5.0,126.03,29.49,5.88,2,1,1913778,"61","-1"],["A1",211,60,"T-T5A","A",13,5.0,125.89,29.5,5.97,2,1,1923422,"38","קרקע תחתון"],["A1",211,61,"T-T4.5C","C",13,4.5,114.89,22.97,5.58,2,1,1718710,"39","קרקע תחתון"],["A1",211,62,"T-T3B","B",13,3.0,80.91,15.99,5.58,2,1,1159871,"40","קרקע תחתון"],["A1",211,63,"T-T6D","D",13,6.0,156.9,57.6,6.98,2,0,null,"82","-2"],["A1",211,64,"T-T5E","AM",13,5.0,126.03,29.49,5.58,2,1,1922791,"41","קרקע תחתון"],["A1",211,65,"T-T5A","A",14,5.0,125.89,29.5,5.58,2,1,1931849,"42","קרקע תחתון"],["A1",211,66,"T-T4.5C","C",14,4.5,114.89,22.97,5.58,2,1,1728605,"43","קרקע תחתון"],["A1",211,67,"T-T3B","B",14,3.0,80.91,15.99,5.58,2,1,1165556,"44","קרקע תחתון"],["A1",211,68,"T-T6D","D",14,6.0,157.0,57.6,5.5,2,0,null,"16","-2"],["A1",211,69,"T-T5E","AM",14,5.0,126.03,29.49,5.58,2,1,1933687,"45","קרקע תחתון"],["A1",211,70,"T-T5A","A",15,5.0,125.89,29.5,5.48,2,1,1942099,"46","קרקע תחתון"],["A1",211,71,"T-T4.5C","C",15,4.5,114.89,22.97,4.62,2,1,1732386,"47","קרקע תחתון"],["A1",211,72,"T-T3B","B",15,3.0,80.91,15.99,6.46,2,1,1175726,"48","קרקע תחתון"],["A1",211,73,"T-T6D","D",15,6.0,157.0,57.6,6.07,2,0,null,"71","-2"],["A1",211,74,"T-T5E","AM",15,5.0,126.03,29.49,6.16,2,1,1948278,"49","קרקע תחתון"],["A1",211,75,"T-T5A","A",16,5.0,125.89,29.5,6.75,2,1,1961112,"50","קרקע תחתון"],["A1",211,76,"T-T4.5C","C",16,4.5,114.89,22.97,5.62,2,1,1748653,"51","קרקע תחתון"],["A1",211,77,"T-T3B","B",16,3.0,80.91,15.99,5.99,2,1,1179027,"52","קרקע תחתון"],["A1",211,78,"T-T6D","D",16,6.0,157.0,57.6,6.86,2,0,null,"70","-2"],["A1",211,79,"T-T5E","AM",16,5.0,126.03,29.49,5.33,2,1,1953879,"53","קרקע תחתון"],["A1",211,80,"T-P6A","P1",17,6.0,177.8,135.1,7.68,2,0,null,"67","-1"],["A1",211,81,"T-P3B","B",17,3.0,80.94,15.85,6.41,2,1,1186729,"54","קרקע תחתון"],["A1",211,82,"T-P6C","P2",17,6.0,184.2,148.5,7.35,2,0,null,"66","-1"],["B4",211,1,"T-G5.5F","BG",0,5.5,138.2,149.9,8.05,2,0,null,"18","-2"],["B4",211,2,"T-G4K","AG",0,4.0,107.2,173.2,6.61,2,0,null,"15","-2"],["B4",211,3,"T-G3H","CG",0,3.0,80.94,220.86,8.05,2,1,1387653,"9","-1"],["B4",211,4,"T-T5.5F","B",1,5.5,138.21,35.2,5.55,2,1,2080718,"8","-1"],["B4",211,5,"T-T5G","A",1,5.0,127.04,25.1,5.55,2,1,1871933,"17","-2"],["B4",211,6,"T-T3H","C",1,3.0,80.99,14.06,5.95,2,1,1132787,"16","-2"],["B4",211,7,"T-T5.5F","B",2,5.5,138.21,35.2,5.95,2,1,2083191,"7","-1"],["B4",211,8,"T-T5G","A",2,5.0,127.22,24.67,7.9,2,1,1886837,"11","-2"],["B4",211,9,"T-T3H","C",2,3.0,80.94,14.06,5.59,2,1,1130387,"1","-1"],["B4",211,10,"T-T5.5F","B",3,5.5,138.21,35.2,6.56,2,1,2086964,"13","-2"],["B4",211,11,"T-T5G","A",3,5.0,127.22,24.67,6.56,2,1,1878550,"4","-1"],["B4",211,12,"T-T3H","C",3,3.0,80.94,14.06,5.84,2,1,1131624,"12","-2"],["B4",211,13,"T-T5.5F","B",4,5.5,138.2,35.5,8.57,2,0,null,"(B6) 20","-2"],["B4",211,14,"T-T5G","A",4,5.0,127.22,24.71,5.59,2,1,1872737,"10","-2"],["B4",211,15,"T-T3H","C",4,3.0,80.94,14.28,5.34,2,1,1129967,"65 (A1)","-2"],["B4",211,16,"T-T5.5F","B",5,5.5,138.2,35.5,5.26,2,0,null,"14","-2"],["B4",211,17,"T-T5G","A",5,5.0,127.22,24.71,5.84,2,1,1874283,"3","-1"],["B4",211,18,"T-T3H","C",5,3.0,80.94,14.28,7.91,2,1,1142681,"2","-1"],["B4",211,19,"T-P6D","P1",6,6.0,160.5,70.8,6.61,2,0,null,"6","-1"],["B4",211,20,"T-P5E","P2",6,5.0,153.0,58.7,5.26,2,0,null,"5","-1"],["B5",211,1,"T-G5.5F","BG",0,5.5,138.2,194.2,5.26,2,0,null,"18","-2"],["B5",211,2,"T-G4K","AG",0,4.0,107.2,189.1,6.65,2,0,null,"12","-1"],["B5",211,3,"T-G3H","CG",0,3.0,80.94,73.83,6.6,2,1,1307305,"3","-1"],["B5",211,4,"T-T5.5F","B",1,5.5,138.26,35.1,5.93,2,1,2083415,"4","-1"],["B5",211,5,"T-T5G","A",1,5.0,127.02,25.1,5.81,2,1,1873278,"5","-1"],["B5",211,6,"T-T3H","C",1,3.0,80.94,14.04,6.81,2,1,1136349,"6","-1"],["B5",211,7,"T-T5.5F","B",2,5.5,138.2,35.1,6.84,2,1,2088255,"7","-1"],["B5",211,8,"T-T5G","A",2,5.0,127.02,24.87,5.22,2,1,1868563,"(B4) 20","-2"],["B5",211,9,"T-T3H","C",2,3.0,80.94,14.07,5.42,2,1,1129583,"(B4) 19","-2"],["B5",211,10,"T-T5.5F","B",3,5.5,138.2,35.1,6.24,2,1,2084544,"13","-2"],["B5",211,11,"T-T5G","A",3,5.0,127.02,24.87,6.57,2,1,1876911,"20","-2"],["B5",211,12,"T-T3H","C",3,3.0,80.94,14.07,6.51,2,1,1134976,"15","-2"],["B5",211,13,"T-T5.5F","B",4,5.5,138.2,35.1,5.93,2,1,2082627,"16","-2"],["B5",211,14,"T-T5G","A",4,5.0,127.02,24.87,5.81,2,1,1872212,"17","-2"],["B5",211,15,"T-T3H","C",4,3.0,80.94,14.07,5.05,2,1,1127753,"11","-1"],["B5",211,16,"T-T5.5F","B",5,5.5,138.1,35.5,5.05,2,0,null,"14","-2"],["B5",211,17,"T-T5G","A",5,5.0,127.02,24.91,6.09,2,1,1874129,"10","-1"],["B5",211,18,"T-T3H","C",5,3.0,80.94,14.29,6.57,2,1,1136089,"8","-1"],["B5",211,19,"T-P6D","P1",6,6.0,160.5,70.8,6.09,2,0,null,"19","-2"],["B5",211,20,"T-P5E","P2",6,5.0,153.0,58.7,10.01,2,0,null,"9","-1"],["B6",211,1,"T-G5.5F","BG",0,5.5,138.2,120.5,7.11,2,0,null,"9","-1"],["B6",211,2,"T-G4K","AG",0,4.0,107.15,85.96,5.55,2,1,1724782,"6","-1"],["B6",211,3,"T-G3H","CG",0,3.0,80.97,110.29,6.03,2,1,1360613,"5","-1"],["B6",211,4,"T-T5.5F","B",1,5.5,138.46,34.91,6.2,2,1,2087126,"4","-1"],["B6",211,5,"T-T5G","A",1,5.0,127.06,25.06,6.87,2,1,1880174,"(A1) 34","-2"],["B6",211,6,"T-T3H","C",1,3.0,80.89,14.05,5.44,2,1,1128990,"2","-1"],["B6",211,7,"T-T5.5F","B",2,5.5,138.46,34.91,5.27,2,1,2081375,"17","-2"],["B6",211,8,"T-T5G","A",2,5.0,127.23,24.67,6.37,2,1,1877507,"(B5) 2","-1"],["B6",211,9,"T-T3H","C",2,3.0,80.85,14.07,6.64,2,1,1134506,"1","-1"],["B6",211,10,"T-T5.5F","B",3,5.5,138.46,34.91,7.12,2,1,2092815,"18","-2"],["B6",211,11,"T-T5G","A",3,5.0,127.23,24.67,6.21,2,1,1876517,"11","-2"],["B6",211,12,"T-T3H","C",3,3.0,80.85,14.07,5.62,2,1,1129460,"12","-2"],["B6",211,13,"T-T5.5F","B",4,5.5,138.46,34.91,6.65,2,1,2089909,"1(B5)","-2"],["B6",211,14,"T-T5G","A",4,5.0,127.23,24.67,6.06,2,1,1875590,"14","-2"],["B6",211,15,"T-T3H","C",4,3.0,80.85,14.07,5.51,2,1,1128915,"15","-2"],["B6",211,16,"T-T5.5F","B",5,5.5,138.2,35.5,7.48,2,0,null,"19","-2"],["B6",211,17,"T-T5G","A",5,5.0,127.23,24.67,6.03,2,1,1875404,"16","-2"],["B6",211,18,"T-T3H","C",5,3.0,80.85,14.07,7.65,2,1,1139503,"(A1) 78","-2"],["B6",211,19,"T-P6D","P1",6,6.0,160.5,70.8,7.84,2,0,null,"3","-1"],["B6",211,20,"T-P5E","P2",6,5.0,153.0,58.7,7.48,2,0,null,"10","-1"],["B2",211,1,"T-G5.5F","BG",-1,5.5,138.2,96.5,5.35,2,0,null,"3","-1"],["B2",211,2,"T-G4K","AG",-1,4.0,107.15,38.85,4.06,2,1,1610035,"11","-1"],["B2",211,3,"T-G3H","CG",-1,3.0,80.94,122.68,4.93,2,1,1368358,"4","-1"],["B2",211,4,"T-T5.5F","B",0,5.5,138.07,35.11,4.93,2,1,2074765,"5","-1"],["B2",211,5,"T-T4K","A*",0,4.0,107.18,23.85,4.93,2,1,1559990,"6","-1"],["B2",211,6,"T-T3H","C",0,3.0,80.95,14.85,4.93,2,1,1130177,"7","-1"],["B2",211,7,"T-T5.5F","B",1,5.5,138.07,35.11,4.93,2,1,2074765,"8","-1"],["B2",211,8,"T-T5G","A",1,5.0,126.95,25.1,5.34,2,1,1869452,"13","-2"],["B2",211,9,"T-T3H","C",1,3.0,80.95,14.21,5.33,2,1,1129781,"12","-2"],["B2",211,10,"T-T5.5F","B",2,5.5,138.07,35.1,3.47,2,1,2065706,"23","-2"],["B2",211,11,"T-T5G","A",2,5.0,127.21,24.67,5.03,2,1,1868957,"14","-2"],["B2",211,12,"T-T3H","C",2,3.0,80.95,14.08,5.96,2,1,1132416,"2","-1"],["B2",211,13,"T-T5.5F","B",3,5.5,138.07,35.1,4.92,2,1,2074673,"16","-2"],["B2",211,14,"T-T5G","A",3,5.0,127.21,24.67,4.93,2,1,1868339,"17","-2"],["B2",211,15,"T-T3H","C",3,3.0,80.95,14.08,4.92,2,1,1127271,"18","-2"],["B2",211,16,"T-T5.5F","B",4,5.5,138.07,35.1,4.92,2,1,2074673,"19","-2"],["B2",211,17,"T-T5G","A",4,5.0,127.21,24.67,4.91,2,1,1868215,"20","-2"],["B2",211,18,"T-T3H","C",4,3.0,80.95,14.08,9.5,2,1,1149929,"10","-1"],["B2",211,19,"T-T5.5F","B",5,5.5,138.2,35.5,5.62,2,0,null,"21","-2"],["B2",211,20,"T-T5G","A",5,5.0,127.21,24.67,5.62,2,1,1872606,"9","-1"],["B2",211,21,"T-T3H","C",5,3.0,80.95,14.08,5.68,2,1,1131030,"1","-1"],["B2",211,22,"T-P6D","P1",6,6.0,160.5,70.8,5.26,2,0,null,"15","-2"],["B2",211,23,"T-P5E","P2",6,5.0,153.0,58.7,9.36,2,0,null,"22","-2"],["C3",211,1,"T-G5I","AG",0,5.0,126.4,134.6,5.33,2,0,null,"3","-1"],["C3",211,2,"T-G5.5J","BG",0,5.5,133.4,187.2,5.33,2,0,null,"9","-2"],["C3",211,3,"T-T5I","A",1,5.0,126.06,30.75,5.33,2,1,1882740,"4","-1"],["C3",211,4,"T-T5.5J","B",1,5.5,133.37,34.29,5.35,2,1,2009283,"10","-2"],["C3",211,5,"T-T5I","A",2,5.0,126.38,30.65,5.79,2,1,1889481,"11","-2"],["C3",211,6,"T-T5.5J","B",2,5.5,133.37,34.29,6.0,2,1,2013303,"12","-2"],["C3",211,7,"T-T5I","A",3,5.0,126.38,30.65,5.1,2,1,1885214,"2","-1"],["C3",211,8,"T-T5.5J","B",3,5.5,133.37,34.29,5.24,2,1,2008603,"1","-1"],["C3",211,9,"T-T5I","A",4,5.0,126.38,30.65,5.81,2,1,1889604,"5","-1"],["C3",211,10,"T-T5.5J","B",4,5.5,133.4,34.8,6.0,2,0,null,"13","-2"],["C3",211,11,"T-T5I","A",5,5.0,126.38,30.65,5.18,2,1,1885708,"8","-2"],["C3",211,12,"T-T5.5J","B",5,5.5,133.4,34.8,5.99,2,0,null,"7","-1"],["C3",211,13,"T-P6F","P1",6,6.0,176.0,153.0,5.99,2,0,null,"6","-1"],["A7",214,1,"T-T5A","A",1,5.0,125.79,29.5,6.08,2,1,1802920,"1","קרקע"],["A7",214,2,"T-T3C","C*",1,3.0,84.93,23.44,5.68,2,1,1172462,"2","קרקע"],["A7",214,3,"T-T6D","D",1,6.0,156.88,56.9,5.68,2,1,2322058,"3","קרקע"],["A7",214,4,"T-T5E","AM",1,5.0,125.97,29.46,5.68,2,1,1802637,"4","קרקע"],["A7",214,5,"T-T5A","A",2,5.0,125.87,29.5,5.68,2,1,1812436,"5","קרקע"],["A7",214,6,"T-T3B","B",2,3.0,80.96,16.13,5.68,2,1,1104598,"6","קרקע"],["A7",214,7,"T-T3C","C*",2,3.0,85.06,23.45,5.68,2,1,1180132,"7","קרקע"],["A7",214,8,"T-T6D","D",2,6.0,156.96,56.91,5.68,2,1,2336693,"8","קרקע"],["A7",214,9,"T-T5E","AM",2,5.0,126.03,29.48,5.87,2,1,1815526,"9","קרקע"],["A7",214,10,"T-T5A","A",3,5.0,125.87,29.5,5.53,2,1,1822421,"10","קרקע"],["A7",214,11,"T-T3B","B",3,3.0,80.96,16.13,5.37,2,1,1108796,"11","קרקע"],["A7",214,12,"T-T3C","C*",3,3.0,85.06,23.45,5.8,2,1,1186794,"12","קרקע"],["A7",214,13,"T-T6D","D",3,6.0,156.96,56.91,5.67,2,1,2350224,"13","קרקע"],["A7",214,14,"T-T5E","AM",3,5.0,126.03,29.48,4.76,2,1,1819738,"14","קרקע"],["A7",214,15,"T-T5A","A",4,5.0,125.87,29.5,4.33,2,1,1826032,"15","קרקע"],["A7",214,16,"T-T3B","B",4,3.0,80.96,16.13,4.34,2,1,1109489,"16","קרקע"],["A7",214,17,"T-T3C","C*",4,3.0,85.06,23.45,4.34,2,1,1185802,"17","קרקע"],["A7",214,18,"T-T6D","D",4,6.0,156.96,56.91,4.34,2,1,2355755,"18","קרקע"],["A7",214,19,"T-T5E","AM",4,5.0,126.03,29.48,4.34,2,1,1828063,"19","קרקע"],["A7",214,20,"T-T5A","A",5,5.0,125.98,29.5,4.34,2,1,1838364,"20","קרקע"],["A7",214,21,"T-T4.5C","C",5,4.5,115.08,22.99,4.48,2,1,1645724,"21","קרקע"],["A7",214,22,"T-T3B","B",5,3.0,80.99,16.15,7.6,2,1,1131474,"22","קרקע"],["A7",214,23,"T-T6D","D",5,6.0,156.9,56.91,7.46,2,1,2387533,"23","קרקע"],["A7",214,24,"T-T5E","AM",5,5.0,126.25,29.49,6.39,2,1,1854301,"24","קרקע"],["A7",214,25,"T-T5A","A",6,5.0,125.98,29.5,6.49,2,1,1862382,"25","קרקע"],["A7",214,26,"T-T4.5C","C",6,4.5,115.08,22.99,7.63,2,1,1674886,"26","קרקע"],["A7",214,27,"T-T3B","B",6,3.0,80.99,16.15,6.97,2,1,1134132,"27","קרקע"],["A7",214,28,"T-T6D","D",6,6.0,156.9,56.91,6.64,2,1,2396155,"28","קרקע"],["A7",214,29,"T-T5E","AM",6,5.0,126.25,29.49,6.52,2,1,1866032,"29","קרקע"],["A7",214,30,"T-T5A","A",7,5.0,125.98,29.5,6.59,2,1,1873918,"30","קרקע"],["A7",214,31,"T-T4.5C","C",7,4.5,115.08,22.99,6.6,2,1,1678523,"31","קרקע"],["A7",214,32,"T-T3B","B",7,3.0,80.99,16.15,4.77,2,1,1129030,"32","קרקע"],["A7",214,33,"T-T6D","D",7,6.0,156.9,56.91,5.12,2,1,2400419,"33","קרקע"],["A7",214,34,"T-T5E","AM",7,5.0,126.25,29.49,6.47,2,1,1876664,"34","קרקע"],["A7",214,35,"T-T5A","A",8,5.0,125.95,29.5,5.88,2,1,1880058,"43","-1"],["A7",214,36,"T-T4.5C","C",8,4.5,114.9,23.17,8.54,2,1,1698514,"74","-2"],["A7",214,37,"T-T3B","B",8,3.0,80.93,16.2,5.81,2,1,1139292,"37","-1"],["A7",214,38,"T-T6D","D",8,6.0,157.0,57.6,6.19,2,0,null,"52","-2"],["A7",214,39,"T-T5E","AM",8,5.0,126.07,29.49,5.99,2,1,1882268,"53","-2"],["A7",214,40,"T-T5A","A",9,5.0,125.95,29.5,5.99,2,1,1880738,"54","-2"],["A7",214,41,"T-T4.5C","C",9,4.5,114.9,23.17,5.99,2,1,1682745,"55","-2"],["A7",214,42,"T-T3B","B",9,3.0,80.93,16.2,5.99,2,1,1140183,"56","-2"],["A7",214,43,"T-T6D","D",9,6.0,157.0,57.6,6.3,2,0,null,"57","-2"],["A7",214,44,"T-T5E","AM",9,5.0,126.07,29.49,6.18,2,1,1883443,"38","-1"],["A7",214,45,"T-T5A","A",10,5.0,125.95,29.5,6.84,2,1,1896924,"63","-2"],["A7",214,46,"T-T4.5C","C",10,4.5,114.9,23.17,6.63,2,1,1696636,"62","-2"],["A7",214,47,"T-T3B","B",10,3.0,80.93,16.2,6.68,2,1,1149315,"61","-2"],["A7",214,48,"T-T6D","D",10,6.0,157.0,57.6,7.16,2,0,null,"60","-2"],["A7",214,49,"T-T5E","AM",10,5.0,126.07,29.49,6.0,2,1,1893242,"39","-1"],["A7",214,50,"T-T5A","A",11,5.0,125.95,29.5,5.89,2,1,1901921,"59","-2"],["A7",214,51,"T-T4.5C","C",11,4.5,114.9,23.17,5.99,2,1,1702572,"40","-1"],["A7",214,52,"T-T3B","B",11,3.0,80.93,16.2,5.97,2,1,1151485,"51","-2"],["A7",214,53,"T-T6D","D",11,6.0,157.0,57.6,10.75,2,0,null,"58","-2"],["A7",214,54,"T-T5E","AM",11,5.0,126.07,29.49,6.39,2,1,1906590,"50","-2"],["A7",214,55,"T-T5A","A",12,5.0,125.95,29.5,4.87,2,1,1906419,"64","-2"],["A7",214,56,"T-T4.5C","C",12,4.5,114.9,23.17,4.75,2,1,1704703,"65","-2"],["A7",214,57,"T-T3B","B",12,3.0,80.93,16.2,5.82,2,1,1156432,"66","-2"],["A7",214,58,"T-T6D","D",12,6.0,157.0,57.6,7.84,2,0,null,"44","-1"],["A7",214,59,"T-T5E","AM",12,5.0,126.07,29.49,5.93,2,1,1914626,"67","-2"],["A7",214,60,"T-T5A","A",13,5.0,125.95,29.5,5.88,2,1,1923659,"68","-2"],["A7",214,61,"T-T4.5C","C",13,4.5,114.9,23.17,4.83,2,1,1715083,"41","-1"],["A7",214,62,"T-T3B","B",13,3.0,80.93,16.2,8.21,2,1,1174189,"73","-2"],["A7",214,63,"T-T6D","D",13,6.0,157.0,57.6,6.19,2,0,null,"36","-1"],["A7",214,64,"T-T5E","AM",13,5.0,126.07,29.49,7.36,2,1,1934556,"69","-2"],["A7",214,65,"T-T5A","A",14,5.0,125.95,29.5,6.7,2,1,1939757,"70","-2"],["A7",214,66,"T-T4.5C","C",14,4.5,114.9,23.17,6.67,2,1,1736624,"71","-2"],["A7",214,67,"T-T3B","B",14,3.0,80.93,16.2,6.1,2,1,1169245,"72","-2"],["A7",214,68,"T-T6D","D",14,6.0,157.0,57.6,8.72,2,0,null,"35","-1"],["A7",214,69,"T-T5E","AM",14,5.0,126.07,29.49,5.68,2,1,1934860,"75","-2"],["A7",214,70,"T-T5A","A",15,5.0,125.95,29.5,6.45,2,1,1949090,"76","-2"],["A7",214,71,"T-T4.5C","C",15,4.5,114.9,23.17,5.91,2,1,1741718,"77","-2"],["A7",214,72,"T-T3B","B",15,3.0,80.93,16.2,6.02,2,1,1174541,"45","-1"],["A7",214,73,"T-T6D","D",15,6.0,157.0,57.6,10.88,2,0,null,"42","-1"],["A7",214,74,"T-T5E","AM",15,5.0,126.07,29.49,8.08,2,1,1961049,"48","-2"],["A7",214,75,"T-P6A","P1",16,6.0,177.8,135.1,9.66,2,0,null,"49","-2"],["A7",214,76,"T-P3B","B",16,3.0,80.92,16.21,5.71,2,1,1178566,"46","-1"],["A7",214,77,"T-P6C","P2",16,6.0,184.2,148.6,9.79,2,0,null,"47","-2"],["B8",214,1,"T-G5.5F","BG",0,5.5,138.2,130.0,8.62,2,0,null,"19","-2"],["B8",214,2,"T-G4K","AG",0,4.0,107.2,103.1,9.8,2,0,null,"17","-2"],["B8",214,3,"T-G3H","CG",0,3.0,80.93,60.01,7.39,2,1,1290670,"5","-1"],["B8",214,4,"T-T5.5F","B",1,5.5,138.23,35.08,7.39,2,1,2091988,"4","-1"],["B8",214,5,"T-T5G","A",1,5.0,127.02,25.09,7.39,2,1,1883003,"3","-1"],["B8",214,6,"T-T3H","C",1,3.0,80.94,14.31,7.39,2,1,1140220,"2","-1"],["B8",214,7,"T-T5.5F","B",2,5.5,138.23,35.1,9.42,2,1,2104604,"1","-1"],["B8",214,8,"T-T5G","A",2,5.0,127.02,24.91,9.78,2,1,1896948,"10","-1"],["B8",214,9,"T-T3H","C",2,3.0,80.98,14.22,9.76,2,1,1152106,"20","-2"],["B8",214,10,"T-T5.5F","B",3,5.5,138.23,35.1,8.61,2,1,2099595,"18","-2"],["B8",214,11,"T-T5G","A",3,5.0,127.02,24.91,8.6,2,1,1889651,"9","-1"],["B8",214,12,"T-T3H","C",3,3.0,80.98,14.22,8.39,2,1,1145328,"16","-2"],["B8",214,13,"T-T5.5F","B",4,5.5,138.23,35.1,7.4,2,1,2092112,"15","-2"],["B8",214,14,"T-T5G","A",4,5.0,127.02,24.91,7.4,2,1,1882230,"14","-2"],["B8",214,15,"T-T3H","C",4,3.0,80.98,14.22,7.4,2,1,1140430,"13","-2"],["B8",214,16,"T-T5.5F","B",5,5.5,138.2,35.5,8.41,2,0,null,"6","-1"],["B8",214,17,"T-T5G","A",5,5.0,127.02,24.91,7.39,2,1,1882168,"12","-2"],["B8",214,18,"T-T3H","C",5,3.0,80.98,14.22,9.44,2,1,1150523,"11","-2"],["B8",214,19,"T-P6D","P1",6,6.0,160.5,70.8,9.78,2,0,null,"7","-1"],["B8",214,20,"T-P5E","P2",6,5.0,153.0,58.7,8.59,2,0,null,"8","-1"],["B9",214,1,"T-G5.5F","BG",-1,5.5,138.2,139.1,6.78,2,0,null,"14","-2"],["B9",214,2,"T-G4K","AG",-1,4.0,107.24,208.61,5.59,2,1,1779047,"4","-1"],["B9",214,3,"T-T5.5F","B",0,5.5,138.23,138.67,5.07,2,1,2247458,"5","-1"],["B9",214,4,"T-T4K","A*",0,4.0,107.19,208.22,5.49,2,1,1777656,"6","-1"],["B9",214,5,"T-G3H","CG",0,3.0,80.96,83.59,6.96,2,1,1324930,"7","-1"],["B9",214,6,"T-T5.5F","B",1,5.5,138.23,35.18,6.56,2,1,2087165,"11","-1"],["B9",214,7,"T-T5G","A",1,5.0,126.91,25.13,6.56,2,1,1876610,"10","-1"],["B9",214,8,"T-T3H","C",1,3.0,80.93,14.28,5.85,2,1,1132366,"12","-2"],["B9",214,9,"T-T5.5F","B",2,5.5,138.23,35.19,5.83,2,1,2082681,"13","-2"],["B9",214,10,"T-T5G","A",2,5.0,127.02,24.9,6.71,2,1,1877916,"3","-1"],["B9",214,11,"T-T3H","C",2,3.0,80.94,14.37,5.58,2,1,1131488,"15","-2"],["B9",214,12,"T-T5.5F","B",3,5.5,138.23,35.19,5.06,2,1,2077919,"16","-2"],["B9",214,13,"T-T5G","A",3,5.0,127.02,24.9,5.5,2,1,1870434,"17","-2"],["B9",214,14,"T-T3H","C",3,3.0,80.94,14.37,6.99,2,1,1138464,"18","-2"],["B9",214,15,"T-T5.5F","B",4,5.5,138.2,35.5,5.83,2,0,null,"2","-1"],["B9",214,16,"T-T5G","A",4,5.0,127.02,24.9,6.62,2,1,1877360,"19","-2"],["B9",214,17,"T-T3H","C",4,3.0,80.92,14.31,6.47,2,1,1135421,"20","-2"],["B9",214,18,"T-T5.5F","B",5,5.5,138.2,35.5,6.47,2,0,null,"22","-2"],["B9",214,19,"T-T5G","A",5,5.0,127.02,24.9,5.83,2,1,1872474,"1","-1"],["B9",214,20,"T-T3H","C",5,3.0,80.92,14.31,6.47,2,1,1135421,"21","-2"],["B9",214,21,"T-P6D","P1",6,6.0,160.5,70.8,6.22,2,0,null,"8","-1"],["B9",214,22,"T-P5E","P2",6,5.0,153.0,58.7,6.8,2,0,null,"9","-1"],["B10",214,1,"T-G5.5F","BG",-1,5.5,138.2,97.8,7.27,2,0,null,"16","-2"],["B10",214,2,"T-G4K","AG",-1,4.0,107.2,139.0,6.04,2,0,null,"10","-1"],["B10",214,3,"T-G3H","CG",-1,3.0,80.95,104.47,4.99,2,1,1344874,"2","-1"],["B10",214,4,"T-T5.5F","B",0,5.5,138.05,97.01,7.51,2,1,2224638,"3","-1"],["B10",214,5,"T-T4K","A*",0,4.0,106.74,138.69,6.85,2,1,1779109,"4","-1"],["B10",214,6,"T-T3H","C",0,3.0,80.97,104.45,7.34,2,1,1359685,"5","-1"],["B10",214,7,"T-T5.5F","B",1,5.5,138.23,35.1,6.36,2,1,2085680,"6","-1"],["B10",214,8,"T-T5G","A",1,5.0,127.02,25.11,6.06,2,1,1874871,"7","-1"],["B10",214,9,"T-T3H","C",1,3.0,80.98,14.25,6.84,2,1,1137771,"8","-1"],["B10",214,10,"T-T5.5F","B",2,5.5,138.23,35.1,7.93,2,1,2095390,"15","-2"],["B10",214,11,"T-T5G","A",2,5.0,127.02,24.91,5.98,2,1,1873448,"9","-1"],["B10",214,12,"T-T3H","C",2,3.0,80.94,14.26,5.98,2,1,1133059,"11","-1"],["B10",214,13,"T-T5.5F","B",3,5.5,138.23,35.1,4.79,2,1,2075971,"1","-1"],["B10",214,14,"T-T5G","A",3,5.0,127.02,24.91,6.05,2,1,1873881,"19","-2"],["B10",214,15,"T-T3H","C",3,3.0,80.94,14.26,6.81,2,1,1137165,"20","-2"],["B10",214,16,"T-T5.5F","B",4,5.5,138.23,35.1,6.06,2,1,2083825,"23","-2"],["B10",214,17,"T-T5G","A",4,5.0,127.02,24.91,4.79,2,1,1866089,"13","-2"],["B10",214,18,"T-T3H","C",4,3.0,80.94,14.26,5.01,2,1,1128260,"14","-2"],["B10",214,19,"T-T5.5F","B",5,5.5,138.2,35.5,6.35,2,0,null,"18","-2"],["B10",214,20,"T-T5G","A",5,5.0,127.02,24.91,5.99,2,1,1873510,"21","-2"],["B10",214,21,"T-T3H","C",5,3.0,80.91,14.21,6.03,2,1,1132750,"22","-2"],["B10",214,22,"T-P6D","P1",6,6.0,160.5,70.8,8.33,2,0,null,"12","-1"],["B10",214,23,"T-P5E","P2",6,5.0,153.0,58.7,7.32,2,0,null,"17","-2"],["B12",214,1,"T-G5.5F","BG",-1,5.5,138.2,92.5,8.08,2,0,null,"7","-1"],["B12",214,2,"T-G4K","AG",-1,4.0,107.2,143.4,6.11,2,0,null,"17","-2"],["B12",214,3,"T-G3H","CG",-1,3.0,80.96,162.16,5.95,2,1,1374975,"6","-1"],["B12",214,4,"T-T5.5F","B",0,5.5,138.09,91.7,6.04,2,1,2207864,"5","-1"],["B12",214,5,"T-T4K","A*",0,4.0,106.71,143.04,5.57,2,1,1770730,"4","-1"],["B12",214,6,"T-T3H","C",0,3.0,80.94,162.19,7.22,2,1,1382520,"3","-1"],["B12",214,7,"T-T5.5F","B",1,5.5,138.23,35.11,7.13,2,1,2090473,"2","-1"],["B12",214,8,"T-T5G","A",1,5.0,127.02,25.11,7.66,2,1,1884765,"1","-1"],["B12",214,9,"T-T3H","C",1,3.0,80.95,14.26,5.14,2,1,1129027,"23","-2"],["B12",214,10,"T-T5.5F","B",2,5.5,138.23,35.1,5.23,2,1,2078692,"22","-2"],["B12",214,11,"T-T5G","A",2,5.0,127.05,24.91,5.62,2,1,1871616,"8","-1"],["B12",214,12,"T-T3H","C",2,3.0,80.95,14.22,5.83,2,1,1132292,"20","-2"],["B12",214,13,"T-T5.5F","B",3,5.5,138.23,35.1,5.23,2,1,2078692,"10","-1"],["B12",214,14,"T-T5G","A",3,5.0,127.05,24.91,8.89,2,1,1891838,"12","-1"],["B12",214,15,"T-T3H","C",3,3.0,80.95,14.22,5.12,2,1,1128779,"11","-1"],["B12",214,16,"T-T5.5F","B",4,5.5,138.2,35.5,6.73,2,0,null,"19","-2"],["B12",214,17,"T-T5G","A",4,5.0,127.02,24.91,5.61,2,1,1871160,"16","-2"],["B12",214,18,"T-T3H","C",4,3.0,80.96,14.22,7.32,2,1,1139787,"15","-2"],["B12",214,19,"T-T5.5F","B",5,5.5,138.2,35.5,6.37,2,0,null,"21","-2"],["B12",214,20,"T-T5G","A",5,5.0,127.02,24.91,7.22,2,1,1881117,"14","-2"],["B12",214,21,"T-T3H","C",5,3.0,80.96,14.22,7.78,2,1,1142063,"13","-2"],["B12",214,22,"T-P6D","P1",6,6.0,160.5,70.8,5.06,2,0,null,"9","-1"],["B12",214,23,"T-P5E","P2",6,5.0,153.0,58.7,7.31,2,0,null,"18","-2"],["C11",214,1,"T-G5I","AG",-1,5.0,126.4,163.9,6.95,2,0,null,"8","-2"],["C11",214,2,"T-G5.5J","BG",-1,5.5,133.4,171.4,5.9,2,0,null,"2","-1"],["C11",214,3,"T-T5I","A",0,5.0,125.88,163.55,5.84,2,1,2066734,"6","-2"],["C11",214,4,"T-T5.5J","B",0,5.5,133.37,171.14,7.97,2,1,2197745,"4","-1"],["C11",214,5,"T-T5I","A",1,5.0,126.06,30.75,6.19,2,1,1888058,"1","-1"],["C11",214,6,"T-T5.5J","B",1,5.5,133.18,34.4,5.93,2,1,2010273,"5","-1"],["C11",214,7,"T-T5I","A",2,5.0,126.2,30.54,5.97,2,1,1887888,"10","-2"],["C11",214,8,"T-T5.5J","B",2,5.5,133.25,34.39,4.89,2,1,2004892,"11","-2"],["C11",214,9,"T-T5I","A",3,5.0,126.16,30.6,4.73,2,1,1879880,"12","-2"],["C11",214,10,"T-T5.5J","B",3,5.5,133.4,34.8,6.0,2,0,null,"7","-2"],["C11",214,11,"T-T5I","A",4,5.0,126.16,30.6,5.19,2,1,1882725,"13","-2"],["C11",214,12,"T-T5.5J","B",4,5.5,133.4,34.9,7.75,2,0,null,"9","-2"],["C11",214,13,"T-P6.5F","P1",5,6.5,176.0,153.0,7.1,2,0,null,"3","-1"],["D15",215,1,"T-G3B","BG",0,3.0,80.85,118.58,7.9,2,1,1383138,"14","-1"],["D15",215,2,"T-G4C","CG",1,4.0,102.82,171.48,8.07,2,1,1726049,"13","-1"],["D15",215,3,"T-G5.5A","AG",1,5.5,136.1,38.4,8.1,2,0,null,"(C14) 11","-1"],["D15",215,4,"T-T3B","B",1,3.0,80.8,19.19,8.48,2,1,1161988,"12","-1"],["D15",215,5,"T-T5C","C",2,5.0,128.2,43.02,8.21,2,1,1966612,"11","-1"],["D15",215,6,"T-T5.5A","A",2,5.5,136.11,37.64,7.08,2,1,2070127,"9","-1"],["D15",215,7,"T-T3B","B",2,3.0,80.88,18.96,6.61,2,1,1152873,"8","-1"],["D15",215,8,"T-T5C","C",3,5.0,128.2,43.02,6.93,2,1,1958697,"7","-1"],["D15",215,9,"T-T5.5A","A",3,5.5,136.11,37.64,5.17,2,1,2058316,"4","-1"],["D15",215,10,"T-T3B","B",3,3.0,80.88,18.96,5.11,2,1,1145452,"15","-1"],["D15",215,11,"T-T5C","C",4,5.0,128.2,43.02,6.23,2,1,1954368,"16","-1"],["D15",215,12,"T-T5.5A","A",4,5.5,136.11,37.64,6.51,2,1,2066602,"2","-1"],["D15",215,13,"T-T3B","B",4,3.0,80.88,18.96,6.93,2,1,1154456,"1","-1"],["D15",215,14,"T-T5C","C",5,5.0,128.2,43.02,9.57,2,1,1975023,"10","-1"],["D15",215,15,"T-T5.5A","A",5,5.5,136.11,37.64,4.66,2,1,2055162,"3","-1"],["D15",215,16,"T-T3B","B",5,3.0,80.88,18.96,14.14,2,1,1190126,"17","-1"],["D15",215,17,"T-P5G","P1",6,5.0,135.2,53.0,7.5,2,0,null,"18","-2"],["D15",215,18,"T-P5H","P2",6,5.0,152.6,120.4,7.15,2,0,null,"5","-1"],["D13",215,1,"T-G4C","CG",-1,4.0,102.5,43.7,5.69,2,0,null,"18","-2"],["D13",215,2,"T-G5.5A","AG",-1,5.5,136.99,108.53,5.13,2,1,2213800,"9","-1"],["D13",215,3,"T-T4C","C1",0,4.0,102.9,116.69,6.48,2,1,1712336,"4","-1"],["D13",215,4,"T-T5.5A","A",0,5.5,136.44,107.92,7.58,2,1,2220781,"5","-1"],["D13",215,5,"T-G3B","BG",0,3.0,80.82,120.27,7.56,2,1,1382767,"6","-1"],["D13",215,6,"T-T5C","C",1,5.0,128.11,43.27,7.98,2,1,1964780,"7","-1"],["D13",215,7,"T-T5.5A","A",1,5.5,136.15,37.64,5.19,2,1,2058965,"8","-1"],["D13",215,8,"T-T3B","B",1,3.0,80.94,18.98,7.39,2,1,1157548,"1","-1"],["D13",215,9,"T-T5C","C",2,5.0,128.15,43.07,6.83,2,1,1957576,"10","-2"],["D13",215,10,"T-T5.5A","A",2,5.5,136.14,37.64,8.6,2,1,2079921,"11","-2"],["D13",215,11,"T-T3B","B",2,3.0,80.75,18.96,6.08,2,1,1148643,"12","-2"],["D13",215,12,"T-T5C","C",3,5.0,128.15,43.07,6.48,2,1,1955411,"13","-2"],["D13",215,13,"T-T5.5A","A",3,5.5,136.14,37.64,7.58,2,1,2073614,"14","-2"],["D13",215,14,"T-T3B","B",3,3.0,80.75,18.96,7.56,2,1,1155965,"15","-2"],["D13",215,15,"T-T5C","C",4,5.0,128.15,43.07,7.98,2,1,1964688,"16","-2"],["D13",215,16,"T-T5.5A","A",4,5.5,136.14,37.64,9.18,2,1,2083508,"17","-2"],["D13",215,17,"T-T3B","B",4,3.0,80.75,18.96,6.41,2,1,1150276,"19","-2"],["D13",215,18,"T-P5G","P1",5,5.0,135.2,53.0,8.6,2,0,null,"2","-1"],["D13",215,19,"T-P5H","P2",5,5.0,152.6,120.4,6.08,2,0,null,"3","-1"],["C14",215,1,"T-G5I","AG",0,5.0,126.4,31.0,7.83,2,0,null,"5","-1"],["C14",215,2,"T-G5.5J","BG",0,5.5,133.4,34.9,7.87,2,0,null,"4","-1"],["C14",215,3,"T-T5I","A",1,5.0,126.07,30.75,6.79,2,1,1891900,"8","-2"],["C14",215,4,"T-T5.5J","B",1,5.5,133.33,34.29,6.23,2,1,2014107,"9","-2"],["C14",215,5,"T-T5I","A",2,5.0,126.06,30.76,9.84,2,1,1910661,"10","-2"],["C14",215,6,"T-T5.5J","B",2,5.5,133.36,34.29,5.94,2,1,2012777,"7","-2"],["C14",215,7,"T-T5I","A",3,5.0,126.06,30.76,9.81,2,1,1910476,"3","-1"],["C14",215,8,"T-T5.5J","B",3,5.5,133.36,34.29,6.38,2,1,2015498,"2","-1"],["C14",215,9,"T-T5I","A",4,5.0,126.06,30.76,7.9,2,1,1898664,"(D15) 6","-1"],["C14",215,10,"T-T5.5J","B",4,5.5,133.36,34.29,4.65,2,1,2004800,"13","-2"],["C14",215,11,"T-T5I","A",5,5.0,126.06,30.76,6.73,2,1,1891429,"6","-2"],["C14",215,12,"T-T5.5J","B",5,5.5,133.4,34.9,7.87,2,0,null,"12","-2"],["C14",215,13,"T-P6.5F","P1",6,6.5,176.3,152.5,6.79,2,0,null,"1","-1"]];
+const META={"dev": "אלמוג ב.ז בנייה והשקעות בע\"מ", "lottery": 2181, "base": 15460.36, "file": "Almogim_Prices_rev1_1.xlsx"};
+/* RAW row: [building, plot, unitNo, planType, saleType, floor, rooms, area, outdoorArea, storageArea, parking, targetPrice(1/0), price|null, storageNo, storageFloor] */
+const SITE_PTS = {A1:[525,66],B2:[383,164],C3:[430,197],B4:[486,210],B5:[557,192],B6:[622,165],A7:[767,154],B12:[678,192],C11:[614,228],B10:[504,264],B9:[616,291],B8:[740,280],D13:[401,290],C14:[427,343],D15:[485,371]};
+const SITE_W = 1100, SITE_H = 527;
+
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt = n => Math.round(n).toLocaleString('he-IL');
+const money = n => fmt(n) + ' ₪';
+const pct = x => '⁦' + (x > 0 ? '+' : x < 0 ? '−' : '') + Math.abs(x * 100).toFixed(1) + '%⁩';
+const mod = (a, n) => ((a % n) + n) % n;
+const m2 = x => (Math.round(x * 10) / 10).toLocaleString('he-IL', { maximumFractionDigits: 1 });
+const fl = f => f === 0 ? 'קרקע' : f < 0 ? '‎−' + (-f) : String(f);
+const DIRS = ['צפון','צפון־מזרח','מזרח','דרום־מזרח','דרום','דרום־מערב','מערב','צפון־מערב'];
+const dirName = a => DIRS[Math.round(mod(a, 360) / 45) % 8];
+const KIND = { T: 'רגילה', G: 'דירת גן', P: 'פנטהאוז' };
+const STAR = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.2l2.7 5.6 6.1.8-4.5 4.2 1.1 6-5.4-3-5.4 3 1.1-6-4.5-4.2 6.1-.8z"/></svg>';
+let toastT;
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 3200); }
+
+/* ---------- data ---------- */
+let UNITS = [], BY = {}, BLDS = [], BST = {}, SRC = 'built-in', CUR_META = META;
+function mkUnit(r) {
+  const [b, plot, n, typ, sale, f, rooms, area, outdoor, sarea, park, tgt, price, sno, sfl] = r;
+  const sf = /קרקע/.test(sfl) ? 'קרקע' : String(parseInt(sfl, 10));
+  return { id: `${b}-${n}`, b, plot, n, typ, sale, f, rooms, area, outdoor, kind: typ[2] || 'T', park, cat: tgt ? 'target' : 'free', price,
+    storage: { no: sno, area: sarea, floor: sf, sub: /עליון/.test(sfl) ? 'עליון' : /תחתון/.test(sfl) ? 'תחתון' : '' } };
+}
+function derive(rows) {
+  UNITS = rows.map(mkUnit); BY = {}; BST = {};
+  UNITS.forEach(u => { BY[u.id] = u; u.ppsqm = u.price != null ? u.price / u.area : null; u.rk = Math.min(6, Math.floor(u.rooms)); });
+  const bl = {}; UNITS.forEach(u => (bl[u.b] = bl[u.b] || []).push(u));
+  BLDS = Object.keys(bl).sort((a, b) => a[0].localeCompare(b[0]) || parseInt(a.slice(1)) - parseInt(b.slice(1)));
+  BLDS.forEach(b => {
+    const a = bl[b], pr = a.filter(u => u.price != null);
+    BST[b] = { id: b, n: a.length, plot: a[0].plot, fmin: Math.min(...a.map(u => u.f)), fmax: Math.max(...a.map(u => u.f)), tgt: a.filter(u => u.cat === 'target').length,
+      avgArea: a.reduce((s, u) => s + u.area, 0) / a.length, pmin: pr.length ? Math.min(...pr.map(u => u.price)) : null, pmax: pr.length ? Math.max(...pr.map(u => u.price)) : null,
+      avgSto: a.reduce((s, u) => s + u.storage.area, 0) / a.length };
+  });
+  UNITS.forEach(u => { u.top = u.f === BST[u.b].fmax; u.bottom = u.f === BST[u.b].fmin; });
+  const priced = UNITS.filter(u => u.price != null), cnt = {};
+  priced.forEach(u => cnt[u.typ] = (cnt[u.typ] || 0) + 1);
+  const g = {};
+  priced.forEach(u => { u.gKey = cnt[u.typ] >= 4 ? 'p:' + u.typ : 'k:' + u.rk + u.kind; u.gLabel = cnt[u.typ] >= 4 ? 'מתוכנית ' + u.typ : `בנות ${u.rk} חדרים (${KIND[u.kind]})`; (g[u.gKey] = g[u.gKey] || []).push(u); });
+  Object.values(g).forEach(arr => {
+    const mean = arr.reduce((s, u) => s + u.ppsqm, 0) / arr.length, sorted = arr.slice().sort((a, b) => a.ppsqm - b.ppsqm);
+    const meanOut = arr.reduce((s, u) => s + u.outdoor, 0) / arr.length;
+    sorted.forEach((u, i) => { Object.assign(u, { gMean: mean, delta: u.ppsqm / mean - 1, gRank: i + 1, gN: arr.length, gMin: sorted[0].ppsqm, gMax: sorted[sorted.length - 1].ppsqm, gOut: meanOut }); });
+  });
+}
+
+/* ---------- solar ---------- */
+function solar(hour, doy, lat = 32.8) {
+  const r = Math.PI / 180, dec = 23.44 * Math.sin(r * 360 / 365 * (doy - 81)), H = 15 * (hour - 12);
+  const sinE = Math.sin(lat * r) * Math.sin(dec * r) + Math.cos(lat * r) * Math.cos(dec * r) * Math.cos(H * r);
+  const e = Math.asin(Math.max(-1, Math.min(1, sinE)));
+  let cA = (Math.sin(dec * r) - sinE * Math.sin(lat * r)) / (Math.cos(e) * Math.cos(lat * r));
+  cA = Math.max(-1, Math.min(1, cA));
+  let az = Math.acos(cA) / r; if (H > 0) az = 360 - az;
+  return { el: e / r, az };
+}
+const SEASONS = { winter: { n: 'חורף', doy: 355 }, equinox: { n: 'אביב/סתיו', doy: 80 }, summer: { n: 'קיץ', doy: 172 } };
+function sunHours(az, doy) {
+  const norms = [az, mod(az + 270, 360)]; let h = 0;
+  for (let t = 5; t < 20; t += 0.25) { const s = solar(t, doy); if (s.el < 6) continue; if (norms.some(n => Math.cos((s.az - n) * Math.PI / 180) > 0.15)) h += 0.25; }
+  return h;
+}
+
+/* ---------- filters ---------- */
+const F = { min: 0, max: 0, rooms: new Set(), fmin: null, fmax: null, bld: new Set(), cat: 'all', flags: new Set(), sto: new Set(), sort: 'ppsqm' };
+let shown = 40;
+function match(u) {
+  if (F.min && (u.price == null || u.price < F.min * 1000)) return false;
+  if (F.max && (u.price == null || u.price > F.max * 1000)) return false;
+  if (F.rooms.size && !F.rooms.has(u.rk)) return false;
+  if (F.fmin != null && u.f < F.fmin) return false;
+  if (F.fmax != null && u.f > F.fmax) return false;
+  if (F.bld.size && !F.bld.has(u.b)) return false;
+  if (F.cat !== 'all' && u.cat !== F.cat) return false;
+  if (F.flags.has('garden') && u.kind !== 'G') return false;
+  if (F.flags.has('pent') && u.kind !== 'P') return false;
+  if (F.flags.has('top') && !u.top) return false;
+  if (F.sto.size && !F.sto.has(u.storage.floor)) return false;
+  return true;
+}
+const nz = (v, d) => v == null ? d : v;
+const SORTS = {
+  ppsqm: (a, b) => nz(a.ppsqm, 1e9) - nz(b.ppsqm, 1e9), delta: (a, b) => nz(a.delta, 9) - nz(b.delta, 9), priceA: (a, b) => nz(a.price, 1e12) - nz(b.price, 1e12), priceD: (a, b) => nz(b.price, -1) - nz(a.price, -1),
+  area: (a, b) => b.area - a.area, floor: (a, b) => b.f - a.f, id: (a, b) => BLDS.indexOf(a.b) - BLDS.indexOf(b.b) || a.n - b.n
+};
+const filtered = () => UNITS.filter(match).sort(SORTS[F.sort]);
+
+/* ---------- personal list + orientation notes (saved to the viewer's account when available) ---------- */
+let PRIO = [], AZ = {};
+let store = { db: null, uid: null };
+const LS_KEY = 'almogim2181.v2';
+const isFav = id => PRIO.some(p => p.id === id);
+let saveTimer;
+function persist() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async () => {
+    const payload = { prio: PRIO.map(p => ({ id: p.id, note: p.note || '' })), az: AZ };
+    try { localStorage.setItem(LS_KEY, JSON.stringify(payload)); } catch (e) {}
+    if (store.db && store.uid) {
+      try { await store.db.doc('data/users/' + store.uid + '/profile2').set(payload); setSave('נשמר בחשבון שלך'); }
+      catch (e) { setSave('נשמר במכשיר הזה בלבד'); }
+    }
+  }, 500);
+}
+function setSave(t) { const s = $('#saveState'); if (s) s.textContent = t; }
+function applySaved(d) { if (!d) return; if (Array.isArray(d.prio)) PRIO = d.prio.filter(p => p && BY[p.id]); if (d.az && typeof d.az === 'object') AZ = d.az; }
+function toggleFav(id) { const i = PRIO.findIndex(p => p.id === id); if (i >= 0) PRIO.splice(i, 1); else PRIO.push({ id, note: '' }); persist(); refreshAll(); }
+function refreshAll() { $('#prioBadge').textContent = PRIO.length; renderSite(); renderElev(); renderCards(); renderPrio(); if (curId) $('#pStar').setAttribute('aria-pressed', isFav(curId)); }
+async function initStore() {
+  try { const raw = localStorage.getItem(LS_KEY); if (raw) applySaved(JSON.parse(raw)); } catch (e) {}
+  setSave('נשמר במכשיר הזה');
+  try {
+    const [db, user] = await Promise.all([window.claude?.use('db'), window.claude?.use('user')]);
+    const uid = user ? await user.id() : null;
+    if (db && uid) {
+      store = { db, uid };
+      const snap = await db.doc('data/users/' + uid + '/profile2').get();
+      if (snap.exists) applySaved(snap.data());
+      setSave('נשמר בחשבון שלך');
+    }
+  } catch (e) {}
+  refreshAll();
+}
+
+/* ---------- site map ---------- */
+function siteHTML(mode, hl) {
+  let s = `<div class="site"><img src="site.jpg" alt="הדמיית הפרויקט עם מספרי הבניינים" width="${SITE_W}" height="${SITE_H}"><svg viewBox="0 0 ${SITE_W} ${SITE_H}" role="group" aria-label="בחירת בניין">`;
+  const counts = {};
+  if (mode === 'main') UNITS.forEach(u => { if (match(u)) counts[u.b] = (counts[u.b] || 0) + 1; });
+  BLDS.forEach(b => {
+    const p = SITE_PTS[b]; if (!p) return;
+    const [x, y] = p;
+    if (mode === 'main') {
+      const c = counts[b] || 0, sel = F.bld.has(b);
+      s += `<g class="hs${sel ? ' sel' : ''}" data-b="${esc(b)}" tabindex="0" role="button" aria-label="בניין ${esc(b)}, ${c} דירות תואמות"><circle class="dim" r="30" cx="${x}" cy="${y}" style="${c ? 'display:none' : ''}"/><circle class="ring" r="32" cx="${x}" cy="${y}"/>
+        <g class="bd"><rect x="${x + 14}" y="${y - 44}" width="${c > 99 ? 44 : 36}" height="26" rx="13"/><text x="${x + 14 + (c > 99 ? 22 : 18)}" y="${y - 25.5}">${c}</text></g></g>`;
+    } else if (b === hl) {
+      s += `<circle cx="${x}" cy="${y}" r="36" fill="none" stroke="#E59B0B" stroke-width="9"/>`;
+    }
+  });
+  return s + '</svg></div>';
+}
+let siteCentered = false;
+function renderSite() {
+  $('#siteMap').innerHTML = siteHTML('main');
+  if (!siteCentered) { const w = $('#siteMap'), mx = w.scrollWidth - w.clientWidth; if (mx > 0) { w.scrollLeft = -mx / 2; siteCentered = true; } }
+  const hits = UNITS.filter(match).length;
+  $('#mapCount').textContent = `${hits} מתוך ${UNITS.length} דירות תואמות`;
+}
+function renderElev() {
+  const host = $('#elev');
+  if (F.bld.size !== 1) { host.hidden = true; host.innerHTML = ''; return; }
+  const b = [...F.bld][0], st = BST[b], us = UNITS.filter(u => u.b === b);
+  host.hidden = false;
+  let rows = '';
+  for (let f = st.fmax; f >= st.fmin; f--) {
+    const arr = us.filter(u => u.f === f).sort((a, c) => a.n - c.n);
+    rows += `<div class="erow"><div class="efl num">${f === 0 ? 'קרקע' : 'קומה ' + fl(f)}</div>${arr.map(u => `<button class="tile ${match(u) ? 'm ' + u.cat : 'x'}${isFav(u.id) ? ' fav' : ''}" data-id="${esc(u.id)}" title="דירה ${u.n} · ${u.rooms} חדרים · ${u.area} מ״ר${u.price != null ? ' · ' + money(u.price) : ''}"><b>${esc(u.sale)}</b><span class="num">${u.rooms}</span></button>`).join('')}</div>`;
+  }
+  host.innerHTML = `<h3>בניין ${esc(b)}</h3><div class="muted num">מגרש ${st.plot} · ${st.n} דירות · קומות ${fl(st.fmin)} עד ${fl(st.fmax)} · ${st.tgt} במחיר מטרה</div>
+    <div class="legend"><span><i style="background:var(--sea)"></i>מחיר מטרה</span><span><i style="background:var(--sun)"></i>שוק חופשי</span><span><i style="background:var(--surface2);border:1px solid var(--line)"></i>לא תואם לסינון</span><span>באריח: סוג הדירה ומספר חדרים</span></div>
+    <div class="grid">${rows}</div>`;
+}
+
+/* ---------- cards ---------- */
+function outLabel(u) { return u.kind === 'G' ? `גינה ${m2(u.outdoor)} מ״ר` : u.kind === 'P' ? `מרפסת גג ${m2(u.outdoor)} מ״ר` : `מרפסת ${m2(u.outdoor)} מ״ר`; }
+function cardHTML(u) {
+  const tags = [`<span class="tag">${u.cat === 'target' ? 'מחיר מטרה' : 'שוק חופשי'}</span>`];
+  if (u.kind !== 'T') tags.push(`<span class="tag">${KIND[u.kind]}</span>`);
+  tags.push(`<span class="tag">${outLabel(u)}</span>`, `<span class="tag">מחסן ${u.storage.floor === 'קרקע' ? 'בקרקע' : 'במפלס ' + fl(parseInt(u.storage.floor))}</span>`);
+  if (u.delta != null) tags.push(`<span class="tag ${u.delta <= -0.03 ? 'good' : u.delta >= 0.03 ? 'bad' : ''}">${pct(u.delta)} מדירות דומות</span>`);
+  else tags.push('<span class="tag warn">מחיר טרם פורסם</span>');
+  return `<article class="card ${u.cat === 'free' ? 'free' : ''}" tabindex="0" role="button" data-id="${esc(u.id)}" aria-label="פתיחת דירה ${u.n} בבניין ${esc(u.b)}">
+    <div class="c-top"><span class="c-id">בניין ${esc(u.b)} · דירה ${u.n} · קומה ${fl(u.f)}</span><button class="star" data-star="${esc(u.id)}" aria-pressed="${isFav(u.id)}" aria-label="הוספה לרשימה שלי">${STAR}</button></div>
+    <div><div class="c-price num">${u.price != null ? money(u.price) : 'שוק חופשי'}</div><div class="c-sub num">${u.rooms} חדרים · ${m2(u.area)} מ״ר${u.ppsqm ? ' · ' + fmt(u.ppsqm) + ' ₪ למ״ר' : ''} · סוג ${esc(u.sale)}</div></div>
+    <div class="tags">${tags.join('')}</div></article>`;
+}
+function renderCards() {
+  const list = filtered();
+  $('#listN').textContent = `(${list.length})`; $('#fCount').textContent = `${list.length} דירות תואמות`;
+  const part = list.slice(0, shown);
+  $('#cards').innerHTML = part.length ? part.map(cardHTML).join('') : '<div class="empty">אין דירות שמתאימות לסינון. נסו להרחיב את התקציב או לנקות מסננים.</div>';
+  const more = $('#moreBtn'); more.hidden = list.length <= shown; more.textContent = `הצג עוד (${list.length - shown})`;
+  $('#mapCount').textContent = `${list.length} מתוך ${UNITS.length} דירות תואמות`;
+}
+
+/* ---------- filter UI ---------- */
+function chipGroup(host, items, getOn, onTap) {
+  host.innerHTML = items.map(([k, label]) => `<button class="chip" data-k="${esc(k)}" aria-pressed="${getOn(k)}">${esc(label)}</button>`).join('');
+  host.onclick = e => { const b = e.target.closest('.chip'); if (!b) return; onTap(b.dataset.k); chipGroup(host, items, getOn, onTap); changed(); };
+}
+const togg = (set, k) => set.has(k) ? set.delete(k) : set.add(k);
+function buildFilters() {
+  chipGroup($('#fRooms'), [['3','3'],['4','4 – 4.5'],['5','5 – 5.5'],['6','6 +']], k => F.rooms.has(+k), k => togg(F.rooms, +k));
+  chipGroup($('#fBld'), BLDS.map(b => [b, b]), k => F.bld.has(k), k => togg(F.bld, k));
+  chipGroup($('#fCat'), [['all','הכול'],['target','מחיר מטרה'],['free','שוק חופשי']], k => F.cat === k, k => { F.cat = k; });
+  chipGroup($('#fFlags'), [['garden','דירת גן'],['pent','פנטהאוז'],['top','קומה אחרונה בבניין']], k => F.flags.has(k), k => togg(F.flags, k));
+  chipGroup($('#fSto'), [['קרקע','קרקע'],['-1','מינוס 1'],['-2','מינוס 2']], k => F.sto.has(k), k => togg(F.sto, k));
+}
+function changed() { shown = 40; renderSite(); renderElev(); renderCards(); }
+function syncBldChips() { chipGroup($('#fBld'), BLDS.map(b => [b, b]), k => F.bld.has(k), k => togg(F.bld, k)); }
+const readNum = id => { const v = $(id).value.trim(); return v === '' ? null : Math.max(0, +v); };
+function wireFilters() {
+  $('#fMin').oninput = () => { F.min = readNum('#fMin') || 0; changed(); };
+  $('#fMax').oninput = () => { F.max = readNum('#fMax') || 0; changed(); };
+  $('#fFmin').oninput = () => { const v = $('#fFmin').value.trim(); F.fmin = v === '' || isNaN(+v) ? null : +v; changed(); };
+  $('#fFmax').oninput = () => { const v = $('#fFmax').value.trim(); F.fmax = v === '' || isNaN(+v) ? null : +v; changed(); };
+  $('#fSort').onchange = e => { F.sort = e.target.value; changed(); };
+  $('#fReset').onclick = resetFilters;
+  $('#moreBtn').onclick = () => { shown += 40; renderCards(); };
+  $('#cards').addEventListener('click', e => {
+    const st = e.target.closest('[data-star]'); if (st) { e.stopPropagation(); toggleFav(st.dataset.star); return; }
+    const c = e.target.closest('.card'); if (c) openDetail(c.dataset.id);
+  });
+  $('#cards').addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('card')) { e.preventDefault(); openDetail(e.target.dataset.id); } });
+  $('#siteMap').addEventListener('click', e => { const h = e.target.closest('.hs'); if (h) pickBld(h.dataset.b); });
+  $('#siteMap').addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.closest('.hs')) { e.preventDefault(); pickBld(e.target.closest('.hs').dataset.b); } });
+  $('#elev').addEventListener('click', e => { const t = e.target.closest('.tile'); if (t) openDetail(t.dataset.id); });
+}
+function pickBld(b) { if (F.bld.size === 1 && F.bld.has(b)) F.bld.clear(); else { F.bld.clear(); F.bld.add(b); } syncBldChips(); changed(); }
+function resetFilters() {
+  Object.assign(F, { min: 0, max: 0, fmin: null, fmax: null, cat: 'all', sort: 'ppsqm' });
+  F.rooms.clear(); F.bld.clear(); F.flags.clear(); F.sto.clear();
+  ['#fMin','#fMax','#fFmin','#fFmax'].forEach(i => $(i).value = ''); $('#fSort').value = 'ppsqm';
+  buildFilters(); changed();
+}
+
+/* ---------- schematic apartment layout (derived from area and rooms; not the real plan) ---------- */
+const LAYOUT = {
+  3: [['salon','סלון',0,0,.5,.55,'FS'],['master','חדר הורים',.5,0,1,.55,'F'],['kit','מטבח',0,.55,.35,1,'S'],['bath','רחצה',.35,.55,.55,1,''],['mamad','ממ״ד / חדר',.55,.55,1,1,'']],
+  4: [['salon','סלון',0,0,.45,.52,'FS'],['bed','חדר',.45,0,.7,.52,'F'],['master','חדר הורים',.7,0,1,.52,'F'],['kit','מטבח',0,.52,.3,1,'S'],['bath','רחצה',.3,.52,.48,1,''],['wc','שירותים',.48,.52,.6,1,''],['mamad','ממ״ד',.6,.52,1,1,'']],
+  5: [['salon','סלון',0,0,.38,.5,'FS'],['bed','חדר',.38,0,.57,.5,'F'],['bed2','חדר',.57,0,.77,.5,'F'],['master','חדר הורים',.77,0,1,.5,'F'],['kit','מטבח',0,.5,.28,1,'S'],['bath','רחצה',.28,.5,.42,1,''],['wc','שירותים',.42,.5,.52,1,''],['mamad','ממ״ד',.52,.5,.76,1,''],['svc','חדר שירות',.76,.5,1,1,'']],
+  6: [['salon','סלון',0,0,.3,.5,'FS'],['bed','חדר',.3,0,.46,.5,'F'],['bed2','חדר',.46,0,.62,.5,'F'],['bed3','חדר',.62,0,.8,.5,'F'],['master','חדר הורים',.8,0,1,.5,'F'],['kit','מטבח',0,.5,.22,1,'S'],['bath','רחצה',.22,.5,.34,1,''],['wc','שירותים',.34,.5,.42,1,''],['mamad','ממ״ד',.42,.5,.62,1,''],['svc','חדר שירות',.62,.5,.8,1,''],['bath2','רחצה הורים',.8,.5,1,1,'']]
+};
+const ROOM_COLOR = { salon:'#d2b98f', kit:'#dcd7cb', bed:'#d6e0e8', bed2:'#d6e0e8', bed3:'#d6e0e8', master:'#cdd9e6', bath:'#b9d3d9', bath2:'#b9d3d9', wc:'#b9d3d9', mamad:'#c9c6d6', svc:'#d5d5d5' };
+function layoutFor(u) {
+  const key = Math.max(3, Math.min(6, Math.floor(u.rooms)));
+  const r = { 3: 1.45, 4: 1.55, 5: 1.7, 6: 1.9 }[key];
+  const D = Math.sqrt(u.area / r), W = u.area / D;
+  return { W, D, rooms: LAYOUT[key].map(([k, name, a, b, c, d, win]) => ({ k, name, x0: a * W, z0: b * D, x1: c * W, z1: d * D, win, w: (c - a) * W, d: (d - b) * D })) };
+}
+const r1 = x => (Math.round(x * 10) / 10).toFixed(1);
+
+/* ---------- 3D viewer ---------- */
+function makeViewer(host, u, az) {
+  if (typeof THREE === 'undefined') { host.innerHTML = '<p style="padding:16px">לא ניתן לטעון את רכיב התלת־ממד (נדרש חיבור לאינטרנט).</p>'; return null; }
+  const T = THREE; let renderer;
+  try { renderer = new T.WebGLRenderer({ antialias: true }); } catch (e) { host.innerHTML = '<p style="padding:16px">הדפדפן לא תומך בתצוגת תלת־ממד.</p>'; return null; }
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.shadowMap.enabled = true; renderer.shadowMap.type = T.PCFSoftShadowMap;
+  host.appendChild(renderer.domElement);
+  const scene = new T.Scene(), camera = new T.PerspectiveCamera(36, 1, 0.1, 400);
+  const L = layoutFor(u), { W, D } = L, R = Math.max(W, D) * 0.85 + 3, known = az != null;
+
+  const hemi = new T.HemisphereLight(0xdfeefa, 0x8a8372, 0.55); scene.add(hemi);
+  const sun = new T.DirectionalLight(0xfff1d0, 1); sun.castShadow = true;
+  sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -0.0004;
+  Object.assign(sun.shadow.camera, { left: -R, right: R, top: R, bottom: -R, near: 1, far: 120 });
+  scene.add(sun); scene.add(sun.target);
+  const sunBall = new T.Mesh(new T.SphereGeometry(1, 20, 14), new T.MeshBasicMaterial({ color: 0xffd34d })); scene.add(sunBall);
+  const ground = new T.Mesh(new T.PlaneGeometry(160, 160), new T.MeshStandardMaterial({ color: 0xb7bfb4, roughness: 1 }));
+  ground.rotation.x = -Math.PI / 2; ground.position.y = -0.22; ground.receiveShadow = true; scene.add(ground);
+
+  const outer = new T.Group(), g = new T.Group();
+  g.position.set(-W / 2, 0, -D / 2); outer.add(g); outer.rotation.y = -(known ? az : 0) * Math.PI / 180; scene.add(outer);
+  const wallMat = new T.MeshStandardMaterial({ color: 0xf1ece2, roughness: .95 }), partyMat = new T.MeshStandardMaterial({ color: 0xcfd3d6, roughness: .95 }), intMat = new T.MeshStandardMaterial({ color: 0xfaf8f3, roughness: .95 });
+  const glassMat = new T.MeshStandardMaterial({ color: 0x9fd3e6, transparent: true, opacity: .22, roughness: .1 });
+  const ghost = new T.MeshBasicMaterial({ colorWrite: false, depthWrite: false });
+  const H = 2.7;
+  function wall(axis, fixed, a0, a1, th, ops, mat, h, glass) {
+    ops = (ops || []).slice().sort((p, q) => p.s - q.s); let cur = a0;
+    const box = (s, e, y0, y1) => {
+      if (e - s < 0.01 || y1 - y0 < 0.01) return;
+      const l = e - s, hh = y1 - y0, c = (s + e) / 2, m = new T.Mesh(axis === 'x' ? new T.BoxGeometry(l, hh, th) : new T.BoxGeometry(th, hh, l), mat);
+      if (axis === 'x') m.position.set(c, y0 + hh / 2, fixed); else m.position.set(fixed, y0 + hh / 2, c);
+      m.castShadow = true; m.receiveShadow = true; g.add(m);
+    };
+    ops.forEach(o => {
+      box(cur, o.s, 0, h); box(o.s, o.e, 0, o.sill); box(o.s, o.e, o.head, h);
+      if (glass) { const gl = new T.Mesh(new T.PlaneGeometry(o.e - o.s, o.head - o.sill), glassMat), c = (o.s + o.e) / 2, y = (o.sill + o.head) / 2; if (axis === 'x') gl.position.set(c, y, fixed); else { gl.position.set(fixed, y, c); gl.rotation.y = Math.PI / 2; } g.add(gl); }
+      cur = o.e;
+    });
+    box(cur, a1, 0, h);
+  }
+  function ghostWall(axis, fixed, a0, a1, th) {
+    const l = a1 - a0, m = new T.Mesh(axis === 'x' ? new T.BoxGeometry(l, H, th) : new T.BoxGeometry(th, H, l), ghost);
+    if (axis === 'x') m.position.set((a0 + a1) / 2, H / 2, fixed); else m.position.set(fixed, H / 2, (a0 + a1) / 2);
+    m.castShadow = true; g.add(m);
+  }
+  const slab = new T.Mesh(new T.BoxGeometry(W + 0.5, 0.2, D + 0.5), new T.MeshStandardMaterial({ color: 0x8b8f93, roughness: 1 }));
+  slab.position.set(W / 2, -0.1, D / 2); slab.receiveShadow = true; slab.castShadow = true; g.add(slab);
+  L.rooms.forEach(rm => {
+    const p = new T.Mesh(new T.PlaneGeometry(rm.w - 0.02, rm.d - 0.02), new T.MeshStandardMaterial({ color: ROOM_COLOR[rm.k] || 0xdddddd, roughness: .9 }));
+    p.rotation.x = -Math.PI / 2; p.position.set((rm.x0 + rm.x1) / 2, 0.01, (rm.z0 + rm.z1) / 2); p.receiveShadow = true; g.add(p);
+  });
+  const ceil = new T.Mesh(new T.PlaneGeometry(W + .5, D + .5), ghost); ceil.rotation.x = Math.PI / 2; ceil.position.set(W / 2, H, D / 2); ceil.castShadow = true; g.add(ceil);
+  const frontOps = [];
+  L.rooms.forEach(rm => {
+    if (!rm.win.includes('F')) return; const c = (rm.x0 + rm.x1) / 2;
+    if (rm.k === 'salon') { const w = Math.min(rm.w * 0.75, 4.2); frontOps.push({ s: c - w / 2, e: c + w / 2, sill: 0, head: 2.25 }); }
+    else { const w = Math.min(rm.w - 0.9, 2.2); frontOps.push({ s: c - w / 2, e: c + w / 2, sill: 0.95, head: 2.2 }); }
+  });
+  wall('x', 0, -0.12, W + 0.12, 0.24, frontOps, wallMat, H, true);
+  const sideOps = [];
+  L.rooms.forEach(rm => { if (rm.win.includes('S')) { const w = Math.min(rm.d - 0.8, 2.4), c = (rm.z0 + rm.z1) / 2; sideOps.push({ s: c - w / 2, e: c + w / 2, sill: rm.k === 'salon' ? 0.4 : 0.95, head: 2.2 }); } });
+  wall('z', 0, 0, D, 0.24, sideOps, wallMat, H, true);
+  wall('x', D, 0, W, 0.24, [], partyMat, 1.5); wall('z', W, 0, D, 0.24, [], partyMat, 1.5);
+  ghostWall('x', D, 0, W, 0.24); ghostWall('z', W, 0, D, 0.24);
+  const seen = new Set();
+  L.rooms.forEach(rm => {
+    [['x', rm.z0, rm.x0, rm.x1], ['x', rm.z1, rm.x0, rm.x1], ['z', rm.x0, rm.z0, rm.z1], ['z', rm.x1, rm.z0, rm.z1]].forEach(([ax, fx, a0, a1]) => {
+      const bound = ax === 'x' ? (fx < 0.01 || Math.abs(fx - D) < 0.01) : (fx < 0.01 || Math.abs(fx - W) < 0.01); if (bound) return;
+      const key = ax + fx.toFixed(2) + '|' + a0.toFixed(2) + '|' + a1.toFixed(2); if (seen.has(key)) return; seen.add(key);
+      const len = a1 - a0, c = (a0 + a1) / 2, ops = [], wide = rm.k === 'kit' && ax === 'x' && Math.abs(fx - rm.z0) < 0.01, dw = wide ? Math.max(0.9, len - 0.5) : Math.min(0.9, len - 0.4);
+      if (len > 1.2) ops.push({ s: c - dw / 2, e: c + dw / 2, sill: 0, head: 2.05 });
+      wall(ax, fx, a0, a1, 0.12, ops, intMat, 1.3);
+    });
+  });
+  const sal = L.rooms.find(r => r.k === 'salon'), bw = Math.min(sal.w * 0.9, 5.5), bx = (sal.x0 + sal.x1) / 2;
+  if (u.kind === 'P') {
+    const dep = Math.min(6, Math.max(2, u.outdoor / W)), terr = new T.Mesh(new T.BoxGeometry(W, 0.16, dep), new T.MeshStandardMaterial({ color: 0xb4ae9f, roughness: 1 }));
+    terr.position.set(W / 2, -0.08, -dep / 2); terr.castShadow = terr.receiveShadow = true; g.add(terr);
+  } else {
+    const bal = new T.Mesh(new T.BoxGeometry(bw, 0.16, 1.7), new T.MeshStandardMaterial({ color: 0xa9a59b, roughness: 1 }));
+    bal.position.set(bx, -0.08, -0.95); bal.castShadow = bal.receiveShadow = true; g.add(bal);
+    const rail = new T.Mesh(new T.BoxGeometry(bw, 1.0, 0.04), glassMat); rail.position.set(bx, 0.5, -1.78); g.add(rail);
+    [-1, 1].forEach(s => { const r = new T.Mesh(new T.BoxGeometry(0.04, 1.0, 1.7), glassMat); r.position.set(bx + s * bw / 2, 0.5, -0.95); g.add(r); });
+  }
+  if (u.kind === 'G') {
+    const gd = Math.max(2, Math.min(14, u.outdoor / W)), lawn = new T.Mesh(new T.PlaneGeometry(W + 1.5, gd), new T.MeshStandardMaterial({ color: 0x7fae6a, roughness: 1 }));
+    lawn.rotation.x = -Math.PI / 2; lawn.position.set(W / 2, -0.19, -gd / 2 - 0.2); lawn.receiveShadow = true; g.add(lawn);
+  }
+  const labels = [];
+  function mkLabel(name, sub) {
+    const c = document.createElement('canvas'); c.width = 320; c.height = 120; const x = c.getContext('2d');
+    x.fillStyle = 'rgba(12,32,40,.82)'; x.fillRect(0, 0, 320, 120);
+    x.fillStyle = '#fff'; x.font = '700 40px Assistant, Arial, sans-serif'; x.textAlign = 'center'; x.fillText(name, 160, 52);
+    x.fillStyle = '#9fe0f2'; x.font = '600 32px Assistant, Arial, sans-serif'; x.fillText(sub, 160, 98);
+    const sp = new T.Sprite(new T.SpriteMaterial({ map: new T.CanvasTexture(c), depthTest: false, transparent: true })); sp.scale.set(2.3, 0.86, 1); sp.renderOrder = 10; return sp;
+  }
+  L.rooms.forEach(rm => { const sp = mkLabel(rm.name, r1(rm.w) + '×' + r1(rm.d) + ' מ׳'); sp.position.set((rm.x0 + rm.x1) / 2, 0.5, (rm.z0 + rm.z1) / 2); g.add(sp); labels.push(sp); });
+  if (known) {
+    const north = mkLabel('צפון', 'N'); north.position.set(0, 0.6, -(R + 1.5)); scene.add(north);
+    const cone = new T.Mesh(new T.ConeGeometry(0.28, 0.9, 16), new T.MeshBasicMaterial({ color: 0xd94a4a })); cone.position.set(0, 0.3, -(R - 0.3)); cone.rotation.x = -Math.PI / 2; scene.add(cone);
+  }
+  const cam = { az: 0.7, pol: 1.0, dist: Math.max(W, D) * 1.45 + 3, auto: true }, tgt = new T.Vector3(0, 0.7, 0);
+  function placeCam() { camera.position.set(tgt.x + cam.dist * Math.sin(cam.pol) * Math.sin(cam.az), tgt.y + cam.dist * Math.cos(cam.pol), tgt.z + cam.dist * Math.sin(cam.pol) * Math.cos(cam.az)); camera.lookAt(tgt); }
+  const el = renderer.domElement, ptrs = new Map(); let lastPinch = 0;
+  el.addEventListener('pointerdown', e => { el.setPointerCapture(e.pointerId); ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY }); cam.auto = false; const b = $('#autoBtn'); if (b) b.setAttribute('aria-pressed', 'false'); });
+  el.addEventListener('pointermove', e => {
+    const p = ptrs.get(e.pointerId); if (!p) return;
+    if (ptrs.size === 1) { cam.az -= (e.clientX - p.x) * 0.008; cam.pol = Math.max(0.2, Math.min(1.5, cam.pol - (e.clientY - p.y) * 0.006)); }
+    p.x = e.clientX; p.y = e.clientY;
+    if (ptrs.size === 2) { const [a, b] = [...ptrs.values()], d = Math.hypot(a.x - b.x, a.y - b.y); if (lastPinch) cam.dist = Math.max(5, Math.min(60, cam.dist * lastPinch / d)); lastPinch = d; }
+  });
+  const up = e => { ptrs.delete(e.pointerId); lastPinch = 0; };
+  el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
+  el.addEventListener('wheel', e => { e.preventDefault(); cam.dist = Math.max(5, Math.min(60, cam.dist * (1 + e.deltaY * 0.001))); }, { passive: false });
+  function setNeutral() {
+    sun.position.set(12, 34, 16); sun.intensity = 0.75; hemi.intensity = 0.6; sunBall.visible = false; scene.background = new T.Color(0xcfe5ee);
+  }
+  function setSun(hour, doy) {
+    const s = solar(hour, doy), r = Math.PI / 180, e_ = s.el * r, a = s.az * r;
+    const dir = new T.Vector3(Math.cos(e_) * Math.sin(a), Math.sin(e_), -Math.cos(e_) * Math.cos(a));
+    sun.position.copy(dir.clone().multiplyScalar(45)); sun.target.position.set(0, 0, 0);
+    sunBall.position.copy(dir.clone().multiplyScalar(26)); sunBall.visible = s.el > 0;
+    const k = Math.max(0, Math.min(1, s.el / 25)); sun.intensity = s.el > 0 ? 0.25 + 1.0 * k : 0; hemi.intensity = 0.28 + 0.4 * k;
+    const day = new T.Color(0xcfe5ee), dusk = new T.Color(0xf2c9a0), night = new T.Color(0x18232e);
+    scene.background = s.el <= 0 ? night : s.el < 12 ? dusk.clone().lerp(day, s.el / 12) : day;
+    ground.material.color.set(s.el > 0 ? 0xb7bfb4 : 0x3a4147);
+    return s;
+  }
+  function resize() { const w = host.clientWidth || 600, h = Math.max(280, Math.min(480, Math.round(w * 0.72))); renderer.setSize(w, h, false); renderer.domElement.style.height = h + 'px'; camera.aspect = w / h; camera.updateProjectionMatrix(); }
+  const ro = new ResizeObserver(resize); ro.observe(host); resize();
+  let raf = 0, alive = true;
+  (function loop() { if (!alive) return; raf = requestAnimationFrame(loop); if (cam.auto) cam.az += 0.004; placeCam(); renderer.render(scene, camera); })();
+  if (!known) setNeutral();
+  return { setSun, setAuto: v => { cam.auto = v; }, isAuto: () => cam.auto, setLabels: v => labels.forEach(l => l.visible = v),
+    dispose() { alive = false; cancelAnimationFrame(raf); ro.disconnect(); scene.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => { if (m.map) m.map.dispose(); m.dispose(); }); }); renderer.dispose(); renderer.forceContextLoss && renderer.forceContextLoss(); el.remove(); } };
+}
+
+/* ---------- detail sheet ---------- */
+let curId = null, curTab = 'ins', viewer = null;
+function closeViewer() { if (viewer) { viewer.dispose(); viewer = null; } }
+function openDetail(id, tab) {
+  const u = BY[id]; if (!u) return;
+  curId = id; curTab = tab || curTab || 'ins';
+  $('#pTitle').textContent = `בניין ${u.b} · דירה ${u.n} · ${u.f === 0 ? 'קרקע' : 'קומה ' + fl(u.f)}`;
+  $('#pSub').textContent = `${u.rooms} חדרים · ${m2(u.area)} מ״ר · ${u.price != null ? money(u.price) : 'מחיר טרם פורסם'} · ${u.cat === 'target' ? 'מחיר מטרה' : 'שוק חופשי'}`;
+  $('#pStar').innerHTML = STAR; $('#pStar').setAttribute('aria-pressed', isFav(id));
+  $('#sheet').classList.add('open'); $('#sheet').setAttribute('aria-hidden', 'false'); document.body.style.overflow = 'hidden';
+  showTab(curTab); $('#pClose').focus();
+}
+function closeDetail() { closeViewer(); curId = null; $('#sheet').classList.remove('open'); $('#sheet').setAttribute('aria-hidden', 'true'); document.body.style.overflow = ''; }
+function showTab(t) {
+  curTab = t; closeViewer();
+  document.querySelectorAll('.ptab').forEach(b => b.setAttribute('aria-selected', b.dataset.t === t));
+  const u = BY[curId], body = $('#pBody'); body.scrollTop = 0;
+  if (t === '3d') render3D(u, body); else if (t === 'bld') renderBld(u, body); else renderIns(u, body);
+}
+function stoText(u) { const s = u.storage; return s.floor === 'קרקע' ? `בקרקע${s.sub ? ' (' + s.sub + ')' : ''}` : `במפלס ${fl(parseInt(s.floor))}`; }
+function renderIns(u, body) {
+  const items = [], priced = u.price != null, st = BST[u.b];
+  if (priced) {
+    if (u.delta <= -0.03) items.push(['good', '💰', 'מחיר למ״ר נמוך מדירות דומות', `${pct(u.delta)} מהממוצע של ${u.gN} דירות ${u.gLabel}.`]);
+    else if (u.delta >= 0.03) items.push(['warn', '💰', 'מחיר למ״ר גבוה מדירות דומות', `${pct(u.delta)} מהממוצע של ${u.gN} דירות ${u.gLabel}. בדרך כלל הפער נובע מקומה גבוהה יותר.`]);
+    else items.push(['', '💰', 'מחיר למ״ר קרוב לממוצע', `${pct(u.delta)} מהממוצע של ${u.gN} דירות ${u.gLabel}.`]);
+    const same = UNITS.filter(x => x.b === u.b && x.typ === u.typ && x.price != null).sort((a, b) => a.f - b.f);
+    if (same.length > 1) {
+      const lo = same[0];
+      if (lo.id === u.id) items.push(['good', '🏢', 'הקומה הנמוכה והזולה בתוכנית הזו בבניין', `יש עוד ${same.length - 1} דירות מאותה תוכנית בבניין ${u.b}, כולן יקרות יותר.`]);
+      else { const d = u.price - lo.price, k = u.f - lo.f; items.push(['', '🏢', `${money(d)} יותר מהדירה הזהה בקומה ${fl(lo.f)}`, `באותו בניין, אותה תוכנית בקומה ${fl(lo.f)} עולה ${money(lo.price)}. ${k > 0 ? `זה ${money(d / k)} לכל קומה בממוצע.` : ''}`]); }
+    }
+  } else items.push(['warn', '💰', 'מחיר שוק חופשי טרם פורסם', 'בקובץ המחירים אין מחיר לדירות השוק החופשי. כשיפורסם, אפשר לטעון קובץ מעודכן בלשונית ״נתונים״.']);
+  const sa = u.storage.area, avg = st.avgSto;
+  items.push([sa < avg * 0.85 ? 'warn' : '', '📦', `מחסן ${u.storage.no}: ${m2(sa)} מ״ר, ${stoText(u)}`, `ממוצע המחסנים בבניין ${u.b} הוא ${m2(avg)} מ״ר${sa < avg * 0.85 ? ', המחסן הזה קטן מהממוצע' : ''}.${u.storage.floor === 'קרקע' ? ' מחסן בקרקע נגיש יותר מחניון תת־קרקעי.' : ''}`]);
+  const o = u.kind === 'G' ? 'גינה' : u.kind === 'P' ? 'מרפסת גג' : 'מרפסת';
+  items.push(['', u.kind === 'G' ? '🌿' : '🌤️', `${o} ${m2(u.outdoor)} מ״ר`, u.gOut != null ? `ממוצע בקבוצה ${m2(u.gOut)} מ״ר. ${u.outdoor > u.gOut * 1.15 ? 'הדירה הזו עם שטח חיצוני גדול מהרגיל.' : ''}` : 'שטח המרפסת או הגינה כפי שמופיע בקובץ.']);
+  items.push(['', '🚗', `${u.park} חניות`, 'מספר החניות לפי קובץ המחירים.']);
+  if (u.top) items.push(['', '🏙️', 'קומה אחרונה בבניין', 'אין דירות מעל. כדאי לברר בידוד ואיטום גג.']);
+  if (u.bottom && u.f <= 0) items.push(['', '🚪', u.kind === 'G' ? 'דירת גן בקומה הנמוכה בבניין' : 'קומה נמוכה בבניין', 'פחות פרטיות מהכניסות והחצר, אך נגישות נוחה.']);
+  const dpos = priced ? Math.max(2, Math.min(98, 50 + u.delta * 500)) : 50;
+  body.innerHTML = `<div class="kpi">
+    <div><small>מחיר</small><strong class="num">${priced ? money(u.price) : 'לא פורסם'}</strong></div>
+    <div><small>מחיר למ״ר</small><strong class="num">${priced ? fmt(u.ppsqm) + ' ₪' : '-'}</strong></div>
+    <div><small>ממוצע דירות דומות</small><strong class="num">${priced ? fmt(u.gMean) + ' ₪' : '-'}</strong></div>
+    <div><small>דירוג מחיר למ״ר בקבוצה</small><strong class="num">${priced ? u.gRank + ' מתוך ' + u.gN : '-'}</strong></div></div>
+    ${priced ? `<div class="sec"><h3>המחיר למ״ר מול דירות ${esc(u.gLabel)}</h3><div class="gauge" aria-hidden="true"><i style="inset-inline-start:${dpos}%"></i></div>
+    <div class="gl num"><span>${fmt(u.gMin)} ₪ (הזולה)</span><span>ממוצע ${fmt(u.gMean)} ₪</span><span>${fmt(u.gMax)} ₪ (היקרה)</span></div></div>` : ''}
+    <div class="sec"><h3>מה כדאי לדעת</h3><div class="ins">${items.map(([c, ic, h, p]) => `<div class="it ${c}"><span class="ic">${ic}</span><div><h4>${esc(h)}</h4><p>${esc(p)}</p></div></div>`).join('')}</div></div>
+    <div class="sec"><h3>פרטי הדירה</h3><div class="facts num">
+      <div><small>תוכנית (תשריט)</small><b>${esc(u.typ)}</b></div><div><small>סוג מכר</small><b>${esc(u.sale)}</b></div><div><small>סוג</small><b>${KIND[u.kind]}</b></div>
+      <div><small>שטח דירה</small><b>${m2(u.area)} מ״ר</b></div><div><small>${o}</small><b>${m2(u.outdoor)} מ״ר</b></div><div><small>מחסן</small><b>${m2(u.storage.area)} מ״ר</b></div></div></div>`;
+}
+function renderBld(u, body) {
+  const st = BST[u.b], onFloor = UNITS.filter(x => x.b === u.b && x.f === u.f).sort((a, b) => a.n - b.n);
+  const same = UNITS.filter(x => x.b === u.b && x.typ === u.typ).sort((a, b) => a.f - b.f);
+  const row = (x, extra) => `<tr class="go ${x.id === u.id ? 'me' : ''}" data-go="${esc(x.id)}"><td class="n">${extra}</td><td>${esc(x.sale)}</td><td class="n">${x.rooms}</td><td class="n">${m2(x.area)}</td><td class="n">${x.price != null ? money(x.price) : 'לא פורסם'}</td></tr>`;
+  body.innerHTML = `<div class="sec"><h3>בניין ${esc(u.b)} במפה</h3>${siteHTML('hl', u.b)}
+    <div class="facts num" style="margin-top:10px"><div><small>מגרש בתב״ע</small><b>${st.plot}</b></div><div><small>קומות</small><b>${fl(st.fmin)} עד ${fl(st.fmax)}</b></div><div><small>דירות</small><b>${st.n}</b></div><div><small>במחיר מטרה</small><b>${st.tgt} (${Math.round(st.tgt / st.n * 100)}%)</b></div><div><small>שטח ממוצע</small><b>${m2(st.avgArea)} מ״ר</b></div>${st.pmin ? `<div><small>טווח מחירים</small><b>${fmt(st.pmin / 1000)}K עד ${fmt(st.pmax / 1000)}K</b></div>` : ''}</div></div>
+    <div class="two"><div class="sec"><h3>דירות בקומה ${fl(u.f)}</h3><div class="scroll"><table class="tbl"><thead><tr><th>דירה</th><th>סוג</th><th>חדרים</th><th>מ״ר</th><th>מחיר</th></tr></thead><tbody>${onFloor.map(x => row(x, x.n)).join('')}</tbody></table></div>
+      <p class="muted" style="font-size:13px;margin:8px 0 0">מיקום הדירות בקומה (כיווני אוויר, שכנות, קרבה למעלית) לא מופיע בקובץ המחירים. הוא יתווסף מתשריטי הקומות.</p></div>
+    <div class="sec"><h3>אותה תוכנית (${esc(u.typ)}) בבניין</h3><div class="scroll"><table class="tbl"><thead><tr><th>קומה</th><th>סוג</th><th>חדרים</th><th>מ״ר</th><th>מחיר</th></tr></thead><tbody>${same.map(x => row(x, fl(x.f))).join('')}</tbody></table></div></div></div>`;
+  body.querySelectorAll('[data-go]').forEach(r => r.onclick = () => openDetail(r.dataset.go, 'bld'));
+}
+function roomTable(u) {
+  const L = layoutFor(u);
+  return `<table class="tbl"><thead><tr><th>חדר</th><th>מידות</th><th>שטח</th></tr></thead><tbody>${L.rooms.map(r => `<tr><td>${esc(r.name)}</td><td class="n">${r1(r.w)} × ${r1(r.d)} מ׳</td><td class="n">${(r.w * r.d).toFixed(1)} מ״ר</td></tr>`).join('')}</tbody></table>`;
+}
+function render3D(u, body) {
+  const az = AZ[u.id] != null ? +AZ[u.id] : null;
+  body.innerHTML = `<div class="banner"><b>הדמיה סכמטית.</b> החלוקה לחדרים נוצרה אוטומטית משטח הדירה ומספר החדרים, והיא לא התוכנית האמיתית של הקבלן. מידות החדרים הן הערכה.</div>
+    <div class="two"><div>
+    <div class="stage" id="stage"><span class="hint">גררו לסיבוב, צביטה לזום</span></div>
+    <div class="sunbar">
+      <div><label class="muted" for="azSel" style="font-size:13px">לאן פונה חזית הסלון? (לפי התשריט)</label>
+        <select class="inp" id="azSel"><option value="">לא ידוע</option>${DIRS.map((d, i) => `<option value="${i * 45}" ${az === i * 45 ? 'selected' : ''}>${d}</option>`).join('')}</select></div>
+      ${az != null ? `<div class="seg" id="sunQuick"><button class="chip" data-h="9">בוקר 09:00</button><button class="chip" data-h="12">צהריים 12:00</button><button class="chip" data-h="16">אחה״צ 16:00</button></div>
+      <div><label class="muted" for="sunH" style="font-size:13px">שעה סולארית</label><input id="sunH" type="range" min="5" max="19.5" step="0.25" value="12"></div>
+      <div class="seg" id="seasonSeg">${Object.entries(SEASONS).map(([k, v]) => `<button class="chip" data-s="${k}" aria-pressed="${k === 'winter'}">${v.n}</button>`).join('')}</div>
+      <div class="sunread" id="sunRead"></div>
+      <div class="sunread">שמש ישירה בסלון: <b class="num">${sunHours(az, SEASONS.winter.doy).toFixed(1)}</b> שעות בחורף, <b class="num">${sunHours(az, SEASONS.summer.doy).toFixed(1)}</b> בקיץ. הערכה לפי כיוון בלבד, ללא הצללה מבניינים סמוכים.</div>` : '<div class="sunread">בחרו כיוון כדי להפעיל את סימולציית השמש. הכיוון לא מופיע בקובץ המחירים.</div>'}
+      <div class="seg"><button class="chip" id="autoBtn" aria-pressed="true">סיבוב 360° אוטומטי</button><button class="chip" id="lblBtn" aria-pressed="true">תוויות חדרים</button></div>
+    </div></div>
+    <div class="sec"><h3>חדרים ומידות (הערכה)</h3>${roomTable(u)}</div></div>`;
+  const v = makeViewer($('#stage'), u, az); viewer = v; if (!v) return;
+  $('#azSel').onchange = e => { if (e.target.value === '') delete AZ[u.id]; else AZ[u.id] = +e.target.value; persist(); showTab('3d'); };
+  $('#autoBtn').onclick = e => { const on = !v.isAuto(); v.setAuto(on); e.currentTarget.setAttribute('aria-pressed', on); };
+  $('#lblBtn').onclick = e => { const on = e.currentTarget.getAttribute('aria-pressed') !== 'true'; v.setLabels(on); e.currentTarget.setAttribute('aria-pressed', on); };
+  if (az == null) return;
+  let season = 'winter', hour = 9;
+  function upd() {
+    const s = v.setSun(hour, SEASONS[season].doy), hh = Math.floor(hour), mm = Math.round((hour - hh) * 60), t = String(hh).padStart(2, '0') + ':' + String(mm).padStart(2, '0');
+    $('#sunRead').innerHTML = s.el > 0 ? `<b class="num">${t}</b> · גובה השמש <b class="num">${Math.round(s.el)}°</b> · השמש בכיוון <b>${esc(dirName(s.az))}</b>` : `<b class="num">${t}</b> · השמש מתחת לאופק`;
+    $('#sunH').value = hour; document.querySelectorAll('#sunQuick .chip').forEach(c => c.setAttribute('aria-pressed', +c.dataset.h === hour));
+  }
+  $('#sunQuick').onclick = e => { const b = e.target.closest('.chip'); if (b) { hour = +b.dataset.h; upd(); } };
+  $('#sunH').oninput = e => { hour = +e.target.value; upd(); };
+  $('#seasonSeg').onclick = e => { const b = e.target.closest('.chip'); if (!b) return; season = b.dataset.s; document.querySelectorAll('#seasonSeg .chip').forEach(c => c.setAttribute('aria-pressed', c === b)); upd(); };
+  upd();
+}
+function wireSheet() {
+  $('#pClose').onclick = closeDetail;
+  $('#sheet').addEventListener('click', e => { if (e.target === $('#sheet')) closeDetail(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && curId) closeDetail(); });
+  document.querySelectorAll('.ptab').forEach(b => b.onclick = () => showTab(b.dataset.t));
+  $('#pStar').onclick = () => { if (curId) toggleFav(curId); };
+}
+
+/* ---------- personal list ---------- */
+function renderPrio() {
+  const host = $('#prioList'); if (!host) return;
+  if (!PRIO.length) { host.innerHTML = '<div class="empty">הרשימה ריקה. סמנו דירות בכוכב כדי להוסיף אותן, ואז סדרו לפי העדיפות ליום הבחירה.</div>'; return; }
+  host.innerHTML = PRIO.map((p, i) => {
+    const u = BY[p.id]; if (!u) return '';
+    return `<div class="pitem" data-i="${i}"><div class="pi-top"><div class="rank num">${i + 1}</div>
+      <div class="pi-main" data-open="${esc(u.id)}"><b>בניין ${esc(u.b)} · דירה ${u.n} · קומה ${fl(u.f)}</b><span class="muted num">${u.rooms} חדרים · ${m2(u.area)} מ״ר · ${u.price != null ? money(u.price) + ' · ' + fmt(u.ppsqm) + ' ₪ למ״ר · ' + pct(u.delta) : 'שוק חופשי, מחיר לא פורסם'}</span></div>
+      <div class="pi-btns"><button data-mv="-1" aria-label="העלאה בעדיפות" ${i === 0 ? 'disabled' : ''}>▲</button><button data-mv="1" aria-label="הורדה בעדיפות" ${i === PRIO.length - 1 ? 'disabled' : ''}>▼</button><button data-rm="1" aria-label="הסרה מהרשימה">✕</button></div></div>
+      <textarea class="inp" data-note="${i}" placeholder="הערות (למשל: שאלות לקבלן, יתרונות וחסרונות)" aria-label="הערות לדירה ${u.n} בבניין ${esc(u.b)}">${esc(p.note || '')}</textarea></div>`;
+  }).join('');
+}
+function wirePrio() {
+  const host = $('#prioList');
+  host.addEventListener('click', e => {
+    const it = e.target.closest('.pitem'); if (!it) return; const i = +it.dataset.i, mv = e.target.closest('[data-mv]');
+    if (mv) { const j = i + +mv.dataset.mv; if (j >= 0 && j < PRIO.length) { [PRIO[i], PRIO[j]] = [PRIO[j], PRIO[i]]; persist(); renderPrio(); } return; }
+    if (e.target.closest('[data-rm]')) { PRIO.splice(i, 1); persist(); refreshAll(); return; }
+    const o = e.target.closest('[data-open]'); if (o) openDetail(o.dataset.open);
+  });
+  host.addEventListener('input', e => { const t = e.target.closest('textarea[data-note]'); if (t) { PRIO[+t.dataset.note].note = t.value; persist(); } });
+  $('#exportBtn').onclick = exportXlsx;
+}
+async function saveFile(name, data, copyText) {
+  try { const d = window.claude ? await window.claude.use('downloads') : null; if (d) { await d.save({ filename: name, data }); toast('הקובץ נשמר'); return; } }
+  catch (e) { if (e && e.code === 'declined') return; }
+  try { await navigator.clipboard.writeText(copyText); toast('ההורדה לא זמינה כאן. התוכן הועתק ללוח'); } catch (e) { toast('ההורדה לא זמינה בתצוגה הזו'); }
+}
+function exportXlsx() {
+  if (!PRIO.length) { toast('הרשימה ריקה'); return; }
+  const head = ['עדיפות','בניין','דירה','קומה','חדרים','שטח דירה (מ״ר)','מרפסת / גינה (מ״ר)','סוג דירה','תוכנית','סוג מכר','מחיר (₪)','מחיר למ״ר (₪)','פער מדירות דומות','סוג','מחסן','קומת מחסן','שטח מחסן (מ״ר)','חניות','הערות'];
+  const rows = PRIO.map((p, i) => { const u = BY[p.id]; return [i + 1, u.b, u.n, u.f, u.rooms, u.area, u.outdoor, KIND[u.kind], u.typ, u.sale, u.price != null ? u.price : 'לא פורסם', u.ppsqm != null ? Math.round(u.ppsqm) : '', u.delta != null ? +u.delta.toFixed(4) : '', u.cat === 'target' ? 'מחיר מטרה' : 'שוק חופשי', u.storage.no, u.storage.floor, u.storage.area, u.park, p.note || '']; });
+  const tsv = [head, ...rows].map(r => r.join('\t')).join('\n');
+  if (typeof XLSX === 'undefined') { saveFile('almogim-priorities.csv', '﻿' + [head, ...rows].map(r => r.map(c => '"' + String(c).replace(/"/g, '""') + '"').join(',')).join('\n'), tsv); return; }
+  const ws = XLSX.utils.aoa_to_sheet([head, ...rows]);
+  ws['!cols'] = head.map((h, i) => ({ wch: i === 18 ? 40 : 14 }));
+  rows.forEach((r, i) => { const d = ws[XLSX.utils.encode_cell({ r: i + 1, c: 12 })]; if (d && d.t === 'n') d.z = '0.0%'; const m = ws[XLSX.utils.encode_cell({ r: i + 1, c: 10 })]; if (m && m.t === 'n') m.z = '#,##0'; });
+  const wb = XLSX.utils.book_new(); wb.Workbook = { Views: [{ RTL: true }] };
+  XLSX.utils.book_append_sheet(wb, ws, 'הרשימה שלי');
+  const buf = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+  saveFile('almogim-priorities.xlsx', new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), tsv);
+}
+
+/* ---------- data view / updated workbook ---------- */
+function renderData() {
+  $('#dataSrc').textContent = SRC === 'built-in' ? `קובץ מובנה: ${CUR_META.file}. יזם: ${CUR_META.dev}. הגרלה ${CUR_META.lottery}. מחיר בסיס למ״ר כולל מע״מ, ללא הנחה: ${fmt(CUR_META.base)} ₪.` : `נטען קובץ: ${SRC}. ${UNITS.length} דירות.`;
+  const rows = BLDS.map(b => { const s = BST[b]; return `<tr><td><b>${esc(b)}</b></td><td class="n">${s.plot}</td><td class="n">${s.n}</td><td class="n">${fl(s.fmin)} עד ${fl(s.fmax)}</td><td class="n">${s.tgt}</td><td class="n">${m2(s.avgArea)}</td><td class="n">${s.pmin ? fmt(s.pmin) + ' – ' + fmt(s.pmax) : '-'}</td></tr>`; }).join('');
+  $('#bldTable').innerHTML = `<table class="tbl"><thead><tr><th>בניין</th><th>מגרש</th><th>דירות</th><th>קומות</th><th>מחיר מטרה</th><th>מ״ר ממוצע</th><th>טווח מחירים (₪)</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+function updateHdr() { $('#hdrStats').textContent = `הגרלה ${CUR_META.lottery} · ${UNITS.length} דירות · ${BLDS.length} בניינים · ${UNITS.filter(u => u.cat === 'target').length} במחיר מטרה`; }
+function loadRows(rows, src, meta) { closeDetail(); SRC = src; if (meta) CUR_META = meta; derive(rows); PRIO = PRIO.filter(p => BY[p.id]); resetFilters(); updateHdr(); renderData(); refreshAll(); }
+function parseWorkbook(buf) {
+  const wb = XLSX.read(buf, { type: 'array' }), ws = wb.Sheets['דירות'] || wb.Sheets[wb.SheetNames[0]];
+  const aoa = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null });
+  if (!aoa.length || aoa[0].length < 13 || !String(aoa[0][0] || '').includes('מבנה')) throw new Error('מבנה העמודות לא תואם לקובץ המחירים. העמודה הראשונה צריכה להיות ״מספר/שם מבנה״.');
+  const out = [], bad = [];
+  aoa.slice(1).forEach((r, i) => {
+    if (r[0] == null || r[0] === '') return;
+    const num = v => { const x = parseFloat(String(v).replace(/[,₪\s]/g, '')); return isNaN(x) ? NaN : x; };
+    const [b, plot, n, tp, ts, f, rooms, area, outd, sa, park, tgt, price, sno, sfl] = r;
+    const row = [String(b).trim(), num(plot), num(n), String(tp || '').trim(), String(ts || '').trim(), num(f), num(rooms), num(area), num(outd), num(sa), num(park), String(tgt).trim() === 'כן' ? 1 : 0, price == null || price === '' ? null : Math.round(num(price)), String(sno == null ? '' : sno).trim(), String(sfl == null ? 'קרקע' : sfl).trim()];
+    if ([row[1], row[2], row[5], row[6], row[7]].some(isNaN) || !row[3] || row[3].length < 3) { bad.push(i + 2); return; }
+    ['outd', 'sa', 'park'].forEach(() => 0); if (isNaN(row[8])) row[8] = 0; if (isNaN(row[9])) row[9] = 0; if (isNaN(row[10])) row[10] = 0; if (row[12] != null && isNaN(row[12])) row[12] = null;
+    out.push(row);
+  });
+  if (!out.length) throw new Error('לא נמצאו שורות תקינות בקובץ.');
+  return { out, bad };
+}
+function wireData() {
+  $('#xlsFile').onchange = async e => {
+    const f = e.target.files[0]; if (!f) return; const msg = $('#importMsg');
+    try {
+      if (typeof XLSX === 'undefined') throw new Error('רכיב קריאת האקסל לא נטען. נדרש חיבור לאינטרנט.');
+      const { out, bad } = parseWorkbook(await f.arrayBuffer());
+      loadRows(out, f.name, CUR_META); msg.textContent = `נטענו ${out.length} דירות.` + (bad.length ? ` דולגו ${bad.length} שורות לא תקינות (למשל שורה ${bad[0]}).` : ''); toast('הקובץ נטען');
+    } catch (err) { msg.textContent = 'שגיאה: ' + err.message; }
+    e.target.value = '';
+  };
+  $('#resetBtn').onclick = () => { loadRows(RAW, 'built-in', META); $('#importMsg').textContent = ''; };
+}
+
+function setView(v) {
+  const m = { apts: 'viewApts', prio: 'viewPrio', data: 'viewData' };
+  Object.entries(m).forEach(([k, id]) => { $('#' + id).hidden = k !== v; });
+  [['apts','tabApts'],['prio','tabPrio'],['data','tabData']].forEach(([k, id]) => $('#' + id).setAttribute('aria-selected', k === v));
+  if (v === 'prio') renderPrio(); window.scrollTo(0, 0);
+}
+
+/* ---------- boot ---------- */
+derive(RAW);
+buildFilters(); wireFilters(); wireSheet(); wirePrio(); wireData(); updateHdr(); renderData();
+$('#tabApts').onclick = () => setView('apts'); $('#tabPrio').onclick = () => setView('prio'); $('#tabData').onclick = () => setView('data');
+$('#noticeX').onclick = () => { $('#infoNotice').hidden = true; };
+renderSite(); renderElev(); renderCards(); renderPrio();
+initStore();
+</script>
+</body>
+</html>
