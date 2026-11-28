@@ -12,7 +12,7 @@ import { getInsights, gaugePosition } from '@/domain/insights';
 import { dirName } from '@/domain/orientation';
 import { layoutFor } from '@/domain/schematic';
 import { solarPosition, sunHours } from '@/domain/solar';
-import type { SortKey } from '@/domain/sort';
+import { SORT_PRESETS, type SortKey } from '@/domain/sort';
 import { legacyFixture } from '@/test/legacyFixture';
 
 const legacy = legacyFixture();
@@ -150,7 +150,7 @@ describe('golden master: filters and sorting', () => {
     category: (s.cat ?? 'all') as Filters['category'],
     flags: (s.flags ?? []) as Filters['flags'],
     storageFloors: s.sto ?? [],
-    sort: (s.sort ?? 'ppsqm') as SortKey,
+    sort: SORT_PRESETS[(s.sort ?? 'ppsqm') as SortKey],
   });
 
   it.each(legacy.filterScenarios.map((s) => [s.name, s] as const))(

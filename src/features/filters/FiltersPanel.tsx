@@ -1,12 +1,13 @@
 import { type ReactNode, useId } from 'react';
 import { CATEGORY_FILTERS, FLAG_FILTERS, ROOM_FILTERS, type RoomsFilter } from '@/domain/filters';
-import { isSortKey, SORT_KEYS } from '@/domain/sort';
 import { he } from '@/i18n/he';
 import { Button, controlClasses } from '@/shared/ui/Button';
 import { ChipGroup, type ChipItem } from '@/shared/ui/ChipGroup';
 import { type FilterInputs, useFiltersStore } from '@/store/filtersStore';
 import { useDataset, useFilteredApartments } from '@/store/selectors';
 import styles from './FiltersPanel.module.css';
+import { SortBuilder } from './SortBuilder';
+import { TypeSearchInput } from './TypeSearchInput';
 
 const T = he.filters;
 
@@ -91,6 +92,7 @@ export function FiltersPanel() {
         <span className={`${styles.count} num`}>{T.count(count)}</span>
       </summary>
       <div className={styles.grid}>
+        <TypeSearchInput />
         <div>
           <span className={styles.label}>{T.budget}</span>
           <div className={styles.pair}>
@@ -172,30 +174,7 @@ export function FiltersPanel() {
             />
           )}
         </Field>
-        <Field
-          label={(id) => (
-            <label className={styles.label} htmlFor={id}>
-              {T.sort}
-            </label>
-          )}
-        >
-          {(id) => (
-            <select
-              id={id}
-              className={controlClasses.input}
-              value={f.sort}
-              onChange={(e) => {
-                if (isSortKey(e.target.value)) actions.setSort(e.target.value);
-              }}
-            >
-              {SORT_KEYS.map((k) => (
-                <option key={k} value={k}>
-                  {T.sortOptions[k]}
-                </option>
-              ))}
-            </select>
-          )}
-        </Field>
+        <SortBuilder />
       </div>
       <div className={styles.actions}>
         <Button onClick={actions.reset}>{T.reset}</Button>

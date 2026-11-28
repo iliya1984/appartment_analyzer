@@ -10,7 +10,17 @@ import {
   pickSingleBuilding,
   toggleIn,
 } from '@/domain/filters';
-import type { SortKey } from '@/domain/sort';
+import { parseTypeQuery } from '@/domain/search';
+import {
+  addSortLevel,
+  moveSortLevel,
+  removeSortLevel,
+  SORT_PRESETS,
+  type SortField,
+  type SortKey,
+  setSortLevelField,
+  toggleSortLevelDir,
+} from '@/domain/sort';
 
 /** Cards shown initially and added by each "show more". */
 export const PAGE_SIZE = 40;
@@ -28,8 +38,11 @@ const EMPTY_INPUTS: FilterInputs = { budgetMin: '', budgetMax: '', floorMin: '',
 interface FiltersState {
   filters: Filters;
   inputs: FilterInputs;
+  /** Raw text of the apartment-type search field. */
+  typeQueryText: string;
   visibleCount: number;
   setInput: (field: keyof FilterInputs, text: string) => void;
+  setTypeQuery: (text: string) => void;
   toggleRoom: (rooms: RoomsFilter) => void;
   toggleBuilding: (building: string) => void;
   /** Map behaviour: select only this building, or clear it if it is the only one selected. */
@@ -37,7 +50,13 @@ interface FiltersState {
   setCategory: (category: CategoryFilter) => void;
   toggleFlag: (flag: FlagFilter) => void;
   toggleStorageFloor: (floor: string) => void;
-  setSort: (sort: SortKey) => void;
+  /** Replaces all sort levels with a quick-sort preset. */
+  setSortPreset: (key: SortKey) => void;
+  addSortLevel: () => void;
+  removeSortLevel: (index: number) => void;
+  setSortField: (index: number, field: SortField) => void;
+  toggleSortDir: (index: number) => void;
+  moveSortLevel: (index: number, delta: -1 | 1) => void;
   showMore: () => void;
   reset: () => void;
 }
@@ -50,6 +69,7 @@ export const useFiltersStore = create<FiltersState>()((set) => {
   return {
     filters: DEFAULT_FILTERS,
     inputs: EMPTY_INPUTS,
+    typeQueryText: '',
     visibleCount: PAGE_SIZE,
     setInput: (field, text) =>
       set((s) => {
@@ -63,6 +83,12 @@ export const useFiltersStore = create<FiltersState>()((set) => {
           visibleCount: PAGE_SIZE,
         };
       }),
+    setTypeQuery: (text) =>
+      set((s) => ({
+        typeQueryText: text,
+        filters: { ...s.filters, typeQuery: parseTypeQuery(text) },
+        visibleCount: PAGE_SIZE,
+      })),
     toggleRoom: (rooms) => update((f) => ({ rooms: toggleIn(f.rooms, rooms) })),
     toggleBuilding: (b) => update((f) => ({ buildings: toggleIn(f.buildings, b) })),
     pickBuilding: (b) => update((f) => ({ buildings: pickSingleBuilding(f.buildings, b) })),
@@ -70,8 +96,19 @@ export const useFiltersStore = create<FiltersState>()((set) => {
     toggleFlag: (flag) => update((f) => ({ flags: toggleIn(f.flags, flag) })),
     toggleStorageFloor: (floor) =>
       update((f) => ({ storageFloors: toggleIn(f.storageFloors, floor) })),
-    setSort: (sort) => update(() => ({ sort })),
+    setSortPreset: (key) => update(() => ({ sort: SORT_PRESETS[key] })),
+    addSortLevel: () => update((f) => ({ sort: addSortLevel(f.sort) })),
+    removeSortLevel: (i) => update((f) => ({ sort: removeSortLevel(f.sort, i) })),
+    setSortField: (i, field) => update((f) => ({ sort: setSortLevelField(f.sort, i, field) })),
+    toggleSortDir: (i) => update((f) => ({ sort: toggleSortLevelDir(f.sort, i) })),
+    moveSortLevel: (i, delta) => update((f) => ({ sort: moveSortLevel(f.sort, i, delta) })),
     showMore: () => set((s) => ({ visibleCount: s.visibleCount + PAGE_SIZE })),
-    reset: () => set({ filters: DEFAULT_FILTERS, inputs: EMPTY_INPUTS, visibleCount: PAGE_SIZE }),
+    reset: () =>
+      set({
+        filters: DEFAULT_FILTERS,
+        inputs: EMPTY_INPUTS,
+        typeQueryText: '',
+        visibleCount: PAGE_SIZE,
+      }),
   };
 });

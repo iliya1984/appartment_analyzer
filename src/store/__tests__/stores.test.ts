@@ -36,7 +36,7 @@ describe('filtersStore', () => {
     filters().toggleFlag('garden');
     filters().toggleStorageFloor('-1');
     filters().setCategory('free');
-    filters().setSort('area');
+    filters().setSortPreset('area');
     filters().toggleBuilding('A1');
     filters().toggleBuilding('B2');
     expect(filters().filters).toMatchObject({
@@ -44,7 +44,7 @@ describe('filtersStore', () => {
       flags: ['garden'],
       storageFloors: ['-1'],
       category: 'free',
-      sort: 'area',
+      sort: [{ field: 'area', dir: 'desc' }],
       buildings: ['A1', 'B2'],
     });
     filters().pickBuilding('A1');
@@ -64,12 +64,42 @@ describe('filtersStore', () => {
     expect(filters().visibleCount).toBe(PAGE_SIZE);
   });
 
+  it('keeps the raw search text and stores parsed tokens', () => {
+    filters().showMore();
+    filters().setTypeQuery('t5a, am');
+    expect(filters().typeQueryText).toBe('t5a, am');
+    expect(filters().filters.typeQuery).toEqual(['T5A', 'AM']);
+    expect(filters().visibleCount).toBe(PAGE_SIZE);
+  });
+
+  it('edits sort levels and applies presets', () => {
+    filters().setSortField(0, 'rooms');
+    filters().addSortLevel();
+    filters().setSortField(1, 'floor');
+    filters().toggleSortDir(1);
+    expect(filters().filters.sort).toEqual([
+      { field: 'rooms', dir: 'asc' },
+      { field: 'floor', dir: 'desc' },
+    ]);
+    filters().moveSortLevel(1, -1);
+    expect(filters().filters.sort.map((l) => l.field)).toEqual(['floor', 'rooms']);
+    filters().showMore();
+    filters().removeSortLevel(0);
+    expect(filters().filters.sort).toEqual([{ field: 'rooms', dir: 'asc' }]);
+    expect(filters().visibleCount).toBe(PAGE_SIZE);
+    filters().setSortPreset('id');
+    expect(filters().filters.sort.map((l) => l.field)).toEqual(['building', 'number']);
+  });
+
   it('resets everything', () => {
     filters().setInput('budgetMin', '900');
     filters().toggleRoom(6);
+    filters().setTypeQuery('T5');
+    filters().addSortLevel();
     filters().reset();
     expect(filters().filters).toEqual(DEFAULT_FILTERS);
     expect(filters().inputs.budgetMin).toBe('');
+    expect(filters().typeQueryText).toBe('');
   });
 });
 
