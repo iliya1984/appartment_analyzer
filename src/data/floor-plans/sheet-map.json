@@ -1,0 +1,186 @@
+{
+  "$comment": "Hand-maintained: which PDF page shows which floors. Floors use the dataset numbering (0 = ground, -1 = lower ground). 'level' orders service sheets that hold no apartments. Read by scripts/plans/build.mjs and src/data/floor-plans/manifest.ts.",
+  "buildings": {
+    "A1": {
+      "plot": 211,
+      "pages": [
+        { "page": 4, "kind": "roof", "floors": [], "label": "גג", "level": 18 },
+        { "page": 5, "kind": "penthouse", "floors": [17], "label": "17" },
+        {
+          "page": 8,
+          "kind": "floor",
+          "floors": [8, 9, 10, 11, 12, 13, 14, 15, 16],
+          "label": "8–16"
+        },
+        { "page": 7, "kind": "floor", "floors": [5, 6, 7], "label": "5–7" },
+        { "page": 6, "kind": "floor", "floors": [2, 3, 4], "label": "2–4" },
+        { "page": 1, "kind": "floor", "floors": [1], "label": "1" },
+        { "page": 3, "kind": "ground", "floors": [], "label": "קרקע עליונה", "level": 0 },
+        { "page": 2, "kind": "ground", "floors": [], "label": "קרקע תחתונה", "level": -1 }
+      ]
+    },
+    "A7": {
+      "plot": 214,
+      "pages": [
+        { "page": 3, "kind": "roof", "floors": [], "label": "גג", "level": 17 },
+        { "page": 4, "kind": "penthouse", "floors": [16], "label": "16" },
+        { "page": 7, "kind": "floor", "floors": [8, 9, 10, 11, 12, 13, 14, 15], "label": "8–15" },
+        { "page": 6, "kind": "floor", "floors": [5, 6, 7], "label": "5–7" },
+        { "page": 5, "kind": "floor", "floors": [2, 3, 4], "label": "2–4" },
+        { "page": 2, "kind": "floor", "floors": [1], "label": "1" },
+        { "page": 1, "kind": "ground", "floors": [], "label": "קרקע", "level": 0 }
+      ]
+    },
+    "B2": {
+      "plot": 211,
+      "pages": [
+        { "page": 4, "kind": "roof", "floors": [], "label": "גג", "level": 7 },
+        { "page": 6, "kind": "penthouse", "floors": [6], "label": "6" },
+        { "page": 5, "kind": "floor", "floors": [5], "label": "5" },
+        { "page": 7, "kind": "floor", "floors": [2, 3, 4], "label": "2–4" },
+        { "page": 1, "kind": "floor", "floors": [1], "label": "1" },
+        { "page": 3, "kind": "ground", "floors": [0], "label": "קרקע עליונה" },
+        { "page": 2, "kind": "garden", "floors": [-1], "label": "קרקע תחתונה" }
+      ]
+    },
+    "B4": {
+      "plot": 211,
+      "pages": [
+        { "page": 3, "kind": "roof", "floors": [], "label": "גג", "level": 7 },
+        { "page": 4, "kind": "penthouse", "floors": [6], "label": "6" },
+        { "page": 6, "kind": "floor", "floors": [4, 5], "label": "4–5" },
+        { "page": 5, "kind": "floor", "floors": [2, 3], "label": "2–3" },
+        { "page": 2, "kind": "floor", "floors": [1], "label": "1" },
+        { "page": 1, "kind": "garden", "floors": [0], "label": "קרקע" }
+      ]
+    },
+    "B5": {
+      "plot": 211,
+      "pages": [
+        { "page": 3, "kind": "roof", "floors": [], "label": "גג", "level": 7 },
+        { "page": 6, "kind": "penthouse", "floors": [6], "label": "6" },
+        { "page": 5, "kind": "floor", "floors": [5], "label": "5" },
+        { "page": 4, "kind": "floor", "floors": [2, 3, 4], "label": "2–4" },
+        { "page": 2, "kind": "floor", "floors": [1], "label": "1" },
+        { "page": 1, "kind": "garden", "floors": [0], "label": "קרקע" }
+      ]
+    },
+    "B6": {
+      "plot": 211,
+      "pages": [
+        { "page": 3, "kind": "roof", "floors": [], "label": "גג", "level": 7 },
+        { "page": 4, "kind": "penthouse", "floors": [6], "label": "6" },
+        { "page": 6, "kind": "floor", "floors": [5], "label": "5" },
+        { "page": 5, "kind": "floor", "floors": [2, 3, 4], "label": "2–4" },
+        { "page": 2, "kind": "floor", "floors": [1], "label": "1" },
+        { "page": 1, "kind": "garden", "floors": [0], "label": "קרקע" }
+      ]
+    },
+    "B8": {
+      "plot": 214,
+      "pages": [
+        { "page": 3, "kind": "roof", "floors": [], "label": "גג", "level": 7 },
+        { "page": 4, "kind": "penthouse", "floors": [6], "label": "6" },
+        { "page": 5, "kind": "floor", "floors": [5], "label": "5" },
+        { "page": 6, "kind": "floor", "floors": [2, 3, 4], "label": "2–4" },
+        { "page": 2, "kind": "floor", "floors": [1], "label": "1" },
+        { "page": 1, "kind": "garden", "floors": [0], "label": "קרקע" }
+      ]
+    },
+    "B9": {
+      "plot": 214,
+      "pages": [
+        { "page": 4, "kind": "roof", "floors": [], "label": "גג", "level": 7 },
+        { "page": 5, "kind": "penthouse", "floors": [6], "label": "6" },
+        { "page": 7, "kind": "floor", "floors": [4, 5], "label": "4–5" },
+        { "page": 6, "kind": "floor", "floors": [2, 3], "label": "2–3" },
+        { "page": 2, "kind": "floor", "floors": [1], "label": "1" },
+        { "page": 3, "kind": "ground", "floors": [0], "label": "קרקע" },
+        { "page": 1, "kind": "garden", "floors": [-1], "label": "קרקע תחתונה" }
+      ]
+    },
+    "B10": {
+      "plot": 215,
+      "pages": [
+        { "page": 4, "kind": "roof", "floors": [], "label": "גג", "level": 7 },
+        { "page": 5, "kind": "penthouse", "floors": [6], "label": "6" },
+        { "page": 7, "kind": "floor", "floors": [5], "label": "5" },
+        { "page": 6, "kind": "floor", "floors": [2, 3, 4], "label": "2–4" },
+        { "page": 3, "kind": "floor", "floors": [1], "label": "1" },
+        { "page": 1, "kind": "ground", "floors": [0], "label": "קרקע" },
+        { "page": 2, "kind": "garden", "floors": [-1], "label": "קרקע תחתונה" }
+      ]
+    },
+    "B12": {
+      "plot": 214,
+      "pages": [
+        { "page": 4, "kind": "roof", "floors": [], "label": "גג", "level": 7 },
+        { "page": 5, "kind": "penthouse", "floors": [6], "label": "6" },
+        { "page": 7, "kind": "floor", "floors": [4, 5], "label": "4–5" },
+        { "page": 6, "kind": "floor", "floors": [2, 3], "label": "2–3" },
+        { "page": 3, "kind": "floor", "floors": [1], "label": "1" },
+        { "page": 1, "kind": "ground", "floors": [0], "label": "קרקע" },
+        { "page": 2, "kind": "garden", "floors": [-1], "label": "קרקע תחתונה" }
+      ]
+    },
+    "C3": {
+      "plot": 211,
+      "pages": [
+        { "page": 3, "kind": "roof", "floors": [], "label": "גג", "level": 7 },
+        { "page": 4, "kind": "penthouse", "floors": [6], "label": "6" },
+        { "page": 6, "kind": "floor", "floors": [4, 5], "label": "4–5" },
+        { "page": 5, "kind": "floor", "floors": [2, 3], "label": "2–3" },
+        { "page": 2, "kind": "floor", "floors": [1], "label": "1" },
+        { "page": 1, "kind": "garden", "floors": [0], "label": "קרקע" }
+      ]
+    },
+    "C11": {
+      "plot": 214,
+      "pages": [
+        { "page": 4, "kind": "roof", "floors": [], "label": "גג", "level": 6 },
+        { "page": 5, "kind": "penthouse", "floors": [5], "label": "5" },
+        { "page": 7, "kind": "floor", "floors": [3, 4], "label": "3–4" },
+        { "page": 6, "kind": "floor", "floors": [2], "label": "2" },
+        { "page": 3, "kind": "floor", "floors": [1], "label": "1" },
+        { "page": 1, "kind": "ground", "floors": [0], "label": "קרקע" },
+        { "page": 2, "kind": "garden", "floors": [-1], "label": "קרקע תחתונה" }
+      ]
+    },
+    "C14": {
+      "plot": 215,
+      "pages": [
+        { "page": 1, "kind": "roof", "floors": [], "label": "גג", "level": 7 },
+        { "page": 2, "kind": "penthouse", "floors": [6], "label": "6" },
+        { "page": 6, "kind": "floor", "floors": [5], "label": "5" },
+        { "page": 5, "kind": "floor", "floors": [2, 3, 4], "label": "2–4" },
+        { "page": 3, "kind": "floor", "floors": [1], "label": "1" },
+        { "page": 4, "kind": "garden", "floors": [0], "label": "קרקע" }
+      ]
+    },
+    "D13": {
+      "plot": 215,
+      "pages": [
+        { "page": 1, "kind": "roof", "floors": [], "label": "גג", "level": 6 },
+        { "page": 2, "kind": "penthouse", "floors": [5], "label": "5" },
+        { "page": 6, "kind": "floor", "floors": [2, 3, 4], "label": "2–4" },
+        { "page": 4, "kind": "floor", "floors": [1], "label": "1" },
+        { "page": 3, "kind": "ground", "floors": [0], "label": "קרקע עליונה" },
+        { "page": 5, "kind": "garden", "floors": [-1], "label": "קרקע תחתונה" }
+      ]
+    },
+    "D15": {
+      "plot": 215,
+      "pages": [
+        {
+          "page": 1,
+          "kind": "unit",
+          "floors": [2, 3, 4, 5],
+          "label": "2–5",
+          "planType": "T-T5C",
+          "scale": 50
+        }
+      ]
+    }
+  },
+  "planTypeAliases": { "C3:T-P6F": "T-P6.5F" }
+}

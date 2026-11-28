@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 
-export const SHEET_TABS = ['insights', 'building', 'schematic'] as const;
+/** 'schematic' keeps its id (old shared links) but now shows the plan-based 3D model when one exists. */
+export const SHEET_TABS = ['insights', 'plans', 'building', 'schematic'] as const;
 export type SheetTab = (typeof SHEET_TABS)[number];
 export const isSheetTab = (v: unknown): v is SheetTab =>
   typeof v === 'string' && (SHEET_TABS as readonly string[]).includes(v);

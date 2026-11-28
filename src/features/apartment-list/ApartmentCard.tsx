@@ -1,7 +1,7 @@
 import { memo } from 'react';
 import { floorLabel, fmt, m2, money } from '@/domain/format';
 import type { Apartment } from '@/domain/types';
-import { ApartmentLink } from '@/features/apartment-detail';
+import { ApartmentLink, PlanLink } from '@/features/apartment-detail';
 import { he } from '@/i18n/he';
 import { cx } from '@/shared/lib/cx';
 import { Tag, Tags } from '@/shared/ui/Content';
@@ -33,12 +33,15 @@ export const ApartmentCard = memo(function ApartmentCard({
         <ApartmentLink apartmentId={a.id} className={styles.open}>
           {he.card.heading(a.building, a.number, floorLabel(a.floor))}
         </ApartmentLink>
-        <StarButton
-          className={styles.star}
-          pressed={inMyList}
-          label={he.common.addToMyList}
-          onToggle={() => onToggleMyList(a.id)}
-        />
+        <div className={styles.actions}>
+          <PlanLink apartment={a} className={styles.planLink} />
+          <StarButton
+            className={styles.star}
+            pressed={inMyList}
+            label={he.common.addToMyList}
+            onToggle={() => onToggleMyList(a.id)}
+          />
+        </div>
       </div>
       <div>
         <div className={`${styles.price} num`}>

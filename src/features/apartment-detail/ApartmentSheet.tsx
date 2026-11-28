@@ -14,6 +14,7 @@ import styles from './ApartmentSheet.module.css';
 import { BuildingTab } from './BuildingTab';
 import { InsightsTab } from './InsightsTab';
 import { readSheetParams, useCloseSheet, useSetSheetTab } from './navigation';
+import { PlansTab } from './PlansTab';
 import { SchematicTab } from './SchematicTab';
 
 const TAB_LABEL: Record<SheetTab, string> = he.sheet.tabs;
@@ -57,7 +58,7 @@ function SheetHeader({
 
 /**
  * The apartment detail sheet, mounted once in the layout and driven by the URL
- * (?apt=<id>&tab=insights|building|schematic). Esc, the close button, a click outside the
+ * (?apt=<id>&tab=insights|plans|building|schematic). Esc, the close button, a click outside the
  * panel and browser Back all close it.
  */
 export function ApartmentSheet() {
@@ -112,6 +113,9 @@ export function ApartmentSheet() {
                 <div className={styles.body} ref={bodyRef}>
                   <Tabs.Content value="insights">
                     <InsightsTab apartment={apartment} />
+                  </Tabs.Content>
+                  <Tabs.Content value="plans">
+                    <PlansTab apartment={apartment} />
                   </Tabs.Content>
                   <Tabs.Content value="building">
                     <BuildingTab apartment={apartment} />

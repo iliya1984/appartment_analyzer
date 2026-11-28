@@ -41,7 +41,9 @@ describe('apartments view', () => {
   it('changes the sort order', async () => {
     const { user } = renderApp();
     await user.selectOptions(screen.getByRole('combobox', { name: 'מיון' }), 'id');
-    expect(within(cards()[0]!).getByRole('link')).toHaveTextContent('בניין A1 · דירה 1 · קומה 1');
+    expect(within(cards()[0]!).getByRole('link', { name: /^בניין/ })).toHaveTextContent(
+      'בניין A1 · דירה 1 · קומה 1',
+    );
   });
 
   it('selects a building on the map, shows its floors, and toggles it off again', async () => {

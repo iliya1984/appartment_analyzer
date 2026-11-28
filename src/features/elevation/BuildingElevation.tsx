@@ -1,8 +1,13 @@
 import { useMemo } from 'react';
+import { Link } from 'react-router';
+import { sheetForFloor, sheetsForBuilding } from '@/domain/floorPlans';
 import { matches } from '@/domain/filters';
 import { floorLabel, floorName } from '@/domain/format';
 import { unitsOnFloor } from '@/domain/related';
+import { floorPlanManifest } from '@/data/floor-plans/manifest';
+import { buildingPlansPath } from '@/features/floor-plans';
 import { he } from '@/i18n/he';
+import { PlanIcon } from '@/shared/icons/PlanIcon';
 import { Legend, Swatch } from '@/shared/ui/Content';
 import { useFiltersStore } from '@/store/filtersStore';
 import { useDataset, useMyListIds } from '@/store/selectors';
@@ -32,7 +37,15 @@ export function BuildingElevation({ onOpenApartment }: BuildingElevationProps) {
 
   return (
     <div className={styles.elevation} data-testid="elevation">
-      <h3>{he.elevation.title(building)}</h3>
+      <div className={styles.head}>
+        <h3>{he.elevation.title(building)}</h3>
+        {sheetsForBuilding(floorPlanManifest, building).length > 0 && (
+          <Link className={styles.plansLink} to={buildingPlansPath(building)}>
+            <PlanIcon />
+            {he.plans.elevationLink}
+          </Link>
+        )}
+      </div>
       <div className="muted num">
         {he.elevation.summary(
           stats.plot,
@@ -60,7 +73,19 @@ export function BuildingElevation({ onOpenApartment }: BuildingElevationProps) {
       <div className={styles.grid}>
         {floors.map((f) => (
           <div className={styles.row} key={f}>
-            <div className={`${styles.floor} num`}>{floorName(f)}</div>
+            <div className={`${styles.floor} num`}>
+              {floorName(f)}
+              {sheetForFloor(floorPlanManifest, building, f) && (
+                <Link
+                  className={styles.floorPlan}
+                  to={buildingPlansPath(building, f)}
+                  aria-label={he.plans.floorRowPlan(floorName(f))}
+                  title={he.plans.floorRowPlan(floorName(f))}
+                >
+                  <PlanIcon />
+                </Link>
+              )}
+            </div>
             {unitsOnFloor(dataset, building, f).map((a) => (
               <UnitTile
                 key={a.id}

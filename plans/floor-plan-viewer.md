@@ -1,6 +1,26 @@
 # Plan: Floor-plan and building-plan viewer
 
-Status: proposed · Date: 2026-11-27 · Scope: show the contractor's real sales plans (תוכניות מכר) for every apartment, plus a browsable set of plans for each building. The 3D side is a separate plan: [apartment-3d-visualization.md](apartment-3d-visualization.md).
+Status: **implemented** (phases 1–5; see §0) · Date: 2026-11-27, updated 2026-11-28 · Scope: show the contractor's real sales plans (תוכניות מכר) for every apartment, plus a browsable set of plans for each building. The 3D side is a separate plan: [apartment-3d-visualization.md](apartment-3d-visualization.md).
+
+---
+
+## 0. Implementation status (2026-11-28)
+
+**Built**
+- Pipeline: `npm run plans:build` (`scripts/plans/build.mjs`) renders all **93 sheets** to WebP (1600 px and 3200 px) and extracts the unit anchors. One child process runs per building, because pdf.js runs out of memory otherwise. Small labels (table headers) are ignored when a sheet has the large salon labels.
+- Storage differs from §3.1: images go to **`resources/plans_rendered/<building>/<sheetId>@{1x,2x}.webp`** (34 MB), not `public/`. They are loaded with `import.meta.glob(…, { query: '?url' })` (`src/features/floor-plans/sheetImages.ts`), so Vite copies them into `dist/assets` with content hashes. The PDFs are never shipped.
+- Manifest: the hand-maintained `src/data/floor-plans/sheet-map.json` (page → floors, read from the title blocks) plus the generated `sheets.generated.json` (sizes and anchors), merged and validated with Zod in `manifest.ts`. Sheet IDs are `<building>-p<page>`.
+- Domain: `src/domain/floorPlans.ts` (`resolveSheet`, `sheetsForBuilding`, `apartmentsOnSheet`, `adjacentSheet`, `coverageReport` and others).
+- UI: the "תוכנית" tab (2nd), with the three modes, floor rail, range stepper, hotspots, zoom, fullscreen and keyboard controls. There is also the `/buildings/:id/plans` page, and entry points on the card, my list, the building tab and the elevation (header plus each floor row). Plan state lives in the URL (`pmode`, `psheet`, `pfloor` in the sheet; `mode`, `sheet`, `floor` on the page).
+- North: every sheet has its north arrow pointing straight up, so `northDeg = 0` everywhere.
+- Tests: `manifest.test.ts` checks that every dataset floor is on exactly one sheet and that the labels on every sheet equal the plan types of its floors. All apartments are covered except the D15 types that have no sheet.
+
+**Differences from the plan**
+- Apartment mode zooms to the unit's anchor and marks it with a ring. The hand-drawn `region` outlines (dim mask) are supported by the schema and the viewer, but none are drawn yet, and the dev annotator (§3.2) was not built.
+- Zoom and pan use our own small hook (`usePanZoom` and `panZoom.ts`, which has unit tests) instead of `react-zoom-pan-pinch`.
+- The "PDF" button was dropped, because the PDFs are not hosted.
+
+**Still open:** the region annotator and outlines, the D15 building set, and confirming the C3 alias (`T-P6F` vs `T-P6.5F`).
 
 ---
 
