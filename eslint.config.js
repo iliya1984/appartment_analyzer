@@ -18,6 +18,7 @@ export default tseslint.config(
       'coverage',
       'node_modules',
       'legacy',
+      'graphify-out',
       'fixtures',
       'playwright-report',
       'test-results',

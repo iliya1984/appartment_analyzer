@@ -1,0 +1,9 @@
+# Paths graphify skips (on top of .gitignore)
+resources/
+legacy/
+fixtures/
+public/
+graphify-out/
+src/data/apartments.data.ts
+src/data/plan-models/*.json
+package-lock.json
