@@ -27,7 +27,9 @@
     "plans:model": "node scripts/plans/extract-model.mjs",
     "plans:measured": "node scripts/plans/build-measured.mjs",
     "plans:vector": "node scripts/plans/extract-vector.mjs",
-    "prepare": "husky"
+    "prepare": "husky",
+    "graph": "uvx --python 3.12 --from graphifyy==0.9.122 graphify",
+    "graph:update": "npm run graph -- update ."
   },
   "dependencies": {
     "@fontsource/assistant": "^5.3.0",

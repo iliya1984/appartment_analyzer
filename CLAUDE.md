@@ -101,6 +101,32 @@ Rules that bite:
   - Furniture is placed automatically (`scripts/plans/vector/furnish.mjs`), for illustration.
   - A mamad is not always labelled as one: look for the thick concrete walls.
 
+## graphify (code knowledge graph)
+
+`graphify-out/` holds a [graphify](https://pypi.org/project/graphifyy/) graph of the code:
+`graph.json` (≈1.1k symbols/files, ≈3.1k import/call/contains edges, grouped into communities),
+`GRAPH_REPORT.md` (communities, god nodes, surprising links, suggested questions) and `graph.html`
+(open in a browser). It is AST-only (`--code-only`): no LLM, no API key, nothing leaves the machine.
+`.graphifyignore` keeps out `resources/`, `legacy/`, `fixtures/`, `public/` and generated data.
+graphify is not installed globally; `npm run graph -- <cmd>` runs it via `uvx` (Python 3.12, pinned
+version; Python 3.15 has no tree-sitter wheels).
+
+Use it before grepping:
+
+- For "where / how / what depends on" questions, first run
+  `npm run graph -- query "<question>"` (add `--budget 1500` for more nodes), or
+  `npm run graph -- explain "<symbol>"`, `npm run graph -- path "<A>" "<B>"`,
+  `npm run graph -- affected "<symbol>"` (reverse dependencies, i.e. the blast radius of a change).
+  These return a small scoped subgraph with file paths and line numbers; then open just those files.
+- Read `graphify-out/GRAPH_REPORT.md` only for a broad architecture overview.
+- The graph can be stale: it records the commit it was built from (see "Graph Freshness" in the
+  report). After changing code, run `npm run graph:update` (incremental, seconds, no API cost) and
+  include the updated `graphify-out/` files in the same commit.
+- Full rebuild (e.g. after editing `.graphifyignore`):
+  `npm run graph -- extract . --code-only --force && npm run graph -- cluster-only .`.
+  Community names come from `graphify-out/.graphify_labels.json` (hand-written; communities
+  that changed since are named after their hub file).
+
 ## Testing conventions
 
 - Tests sit next to the code in `__tests__/`. Factories are in `src/test/factories.ts` (`row`,
