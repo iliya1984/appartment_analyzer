@@ -172,8 +172,7 @@ export const he = {
     title: 'דירות',
     empty: 'אין דירות שמתאימות לסינון. נסו להרחיב את התקציב או לנקות מסננים.',
     more: (rest: number) => `הצג עוד (${rest})`,
-    export: 'ייצוא לאקסל',
-    exportAria: (n: number) => `ייצוא ${n} הדירות התואמות לאקסל`,
+    export: (n: number) => `ייצוא ${n} דירות לאקסל`,
     exportedToast: (n: number) => `הקובץ נשמר: ${n} דירות`,
     exportEmpty: 'אין דירות לייצוא',
     exportFailed: 'הייצוא נכשל',
@@ -392,7 +391,7 @@ export const he = {
     loadingModel: 'טוען מודל מהתוכנית…',
     bannerStrong: 'הדמיה לפי תוכנית המכר.',
     banner: (plan: string) =>
-      ` הקירות, החלונות והחדרים נמדדו מתוכנית ${plan}. להמחשה בלבד, לא מחייב. השטח הרשמי הוא השטח בקובץ המחירים.`,
+      ` הקירות, החלונות והחדרים נמדדו מתוכנית ${plan}. להמחשה בלבד, לא מחייב; הריהוט להמחשה בלבד. השטח הרשמי הוא השטח בקובץ המחירים.`,
     wallsLow: 'קירות נמוכים',
     labels: 'תוויות',
     reset: 'חזרה לתצוגת הפתיחה',
@@ -412,7 +411,14 @@ export const he = {
     showOnPlan: 'הצג בתוכנית',
     roomsTitle: 'חדרים ושטחים (לפי התוכנית)',
     colRoom: 'חדר',
+    colDims: 'מידות (לפי התוכנית)',
     colArea: 'שטח נטו',
+    /** Sheet dimensions in cm → "3.45 × 2.80" (metres; shown left-to-right). */
+    dims: (w: number, d: number) => `${(w / 100).toFixed(2)} × ${(d / 100).toFixed(2)}`,
+    metres: 'מ׳',
+    dimsLabel: (w: number, d: number, area: string) =>
+      `${(w / 100).toFixed(2)}×${(d / 100).toFixed(2)} · ${area} מ״ר`,
+    furnitureNote: 'הריהוט להמחשה בלבד.',
     totalNet: 'סה״כ נטו (ללא קירות)',
     officialArea: (area: string) => `שטח הדירה הרשמי: ${area} מ״ר (כולל קירות)`,
     roomTypes: {

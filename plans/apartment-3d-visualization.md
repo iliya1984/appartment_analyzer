@@ -28,8 +28,24 @@ Status: **phase 1 and the viewer are implemented** (see §0) · Updated 2026-11-
   - The 3D tab shows a view switch, the "מבוסס תוכנית" or "סכמטי" badge, overlays, the walk pad, the real rooms table, and automatic orientation from the plan.
 - Tests: model validation against the dataset, a scene builder without WebGL, camera and view switching, walking and collision, and tab UI tests.
 
+**Update 2026-11-28: measured models**
+- **T-T5C is now hand-measured** (`scripts/plans/measured/T-T5C.json` → `npm run plans:measured`).
+  - Walls were read off the 1:50 sheet at 1 cm/px.
+  - Every room matches the sheet's dimension labels within 3 cm (the drawn line width). The labels are kept as `dims` and shown in the rooms table and the 3D labels.
+  - The corridor, the covered balcony (386/441 × 938) and the drying yard are modelled.
+  - There are 19 openings with the sheet's W/H labels, balcony railings at 1.05 m, and 31 pieces of simple furniture (for illustration only).
+- The raster model had errors that are now fixed:
+  - Bedroom 3 ran into the corridor.
+  - The laundry room and the drying yard were mixed up.
+  - Door swings were cut out of the room areas.
+
+**Update 2026-11-28: all plan types modelled**
+- The other 33 types are traced from the 1:100 building sheets by `npm run plans:vector` (method `"vector"`): walls from the black 1.8 / 1.44 pt strokes at 1 cm/px, openings from gaps between wall ends, rooms from seeds read off the sheet, balconies/terraces/gardens from outdoor seeds and clip boxes. Room faces are trimmed 2 cm (plaster), calibrated so that T-T5C traced from its 1:100 sheet matches the 1:50 labels within 5 cm.
+- Furniture is placed per room type by `scripts/plans/vector/furnish.mjs`; rectangular rooms carry their traced dimensions.
+- T-P6F is the same plan as T-P6.5F (alias in sheet-map.json); its half room is typed "other" because the price file counts 6 rooms.
+- The schematic remains only for imported workbooks with unknown plan types.
+
 **Not done yet**
-- Models for the other ~40 plan types. The heuristic 1:100 path (`method: "colors"`) exists in the extractor, but it needs a unit crop and room seeds for each type, so the remaining types still show the schematic.
 - The dev model editor (`/dev/plan-model-editor`). Seeds are edited in `model-specs.json` instead.
 - Ghost floors, neighbour massing and furniture (phase 6).
 

@@ -44,14 +44,13 @@ export function ApartmentList({ load = loadXlsx, download = downloadBlob }: Apar
         <ExportButton
           variant="default"
           disabled={!list.length}
-          aria-label={he.list.exportAria(list.length)}
           build={() => exportApartments({ list, filters, myListIds: myList }, load)}
           onEmpty={() => showToast(he.list.exportEmpty)}
           onDone={() => showToast(he.list.exportedToast(list.length))}
           onError={() => showToast(he.list.exportFailed)}
           download={download}
         >
-          {he.list.export}
+          {he.list.export(list.length)}
         </ExportButton>
       </ListHead>
       {shown.length ? (

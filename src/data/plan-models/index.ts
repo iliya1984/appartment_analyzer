@@ -3,7 +3,7 @@
  * its own lazy chunk: only the model of the apartment being viewed is downloaded.
  */
 import { z } from 'zod';
-import { mirrorModel, type PlanModel } from '@/domain/planModel';
+import { FURNITURE_KINDS, mirrorModel, type PlanModel } from '@/domain/planModel';
 
 const rect = z.tuple([z.number(), z.number(), z.number().positive(), z.number().positive()]);
 const pt = z.tuple([z.number(), z.number()]);
@@ -30,6 +30,7 @@ const room = z.object({
   rects: z.array(rect).min(1),
   areaM2: z.number().positive(),
   center: pt,
+  dims: z.tuple([z.number().positive(), z.number().positive()]).optional(),
 });
 
 export const planModelSchema = z.object({
@@ -38,7 +39,7 @@ export const planModelSchema = z.object({
     file: z.string(),
     page: z.number().int().positive(),
     scale: z.union([z.literal(50), z.literal(100)]),
-    method: z.enum(['layers', 'colors']),
+    method: z.enum(['measured', 'vector', 'layers', 'colors']),
   }),
   unitsCm: z.literal(true),
   northDeg: z.number(),
@@ -55,6 +56,16 @@ export const planModelSchema = z.object({
   ),
   rooms: z.array(room).min(1),
   outdoor: z.array(room.extend({ covered: z.boolean() })),
+  rails: z.array(rect).optional(),
+  furniture: z
+    .array(
+      z.object({
+        kind: z.enum(FURNITURE_KINDS),
+        rect,
+        side: z.enum(['n', 'e', 's', 'w']).optional(),
+      }),
+    )
+    .optional(),
 });
 
 const files = import.meta.glob<unknown>('./*.json', { import: 'default' });

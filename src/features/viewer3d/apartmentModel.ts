@@ -59,6 +59,7 @@ export function makeLabel(name: string, sub: string): THREE.Sprite {
     x.textAlign = 'center';
     x.fillText(name, 160, 52);
     x.fillStyle = '#9fe0f2';
+    x.direction = 'ltr'; // sizes such as "3.45×2.80 · 11.8 מ״ר" read left to right
     x.font = '600 32px Assistant, Arial, sans-serif';
     x.fillText(sub, 160, 98);
   }

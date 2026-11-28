@@ -35,7 +35,13 @@ export interface PlanRoom {
   label: string;
   rects: readonly Rect[];
   areaM2: number;
+  /** Label point inside the room. */
   center: readonly [number, number];
+  /**
+   * Clear dimensions (cm, width × depth): written on the 1:50 sheet, or measured from the traced
+   * 1:100 drawing for rectangular rooms.
+   */
+  dims?: readonly [number, number];
 }
 
 export interface PlanOutdoor extends PlanRoom {
@@ -50,9 +56,46 @@ export interface PlanOpening {
   head: number;
 }
 
+export const FURNITURE_KINDS = [
+  'bed-double',
+  'bed-single',
+  'wardrobe',
+  'desk',
+  'sofa',
+  'table',
+  'coffee-table',
+  'tv',
+  'counter',
+  'fridge',
+  'toilet',
+  'sink',
+  'bathtub',
+  'shower',
+  'washer',
+] as const;
+export type FurnitureKind = (typeof FURNITURE_KINDS)[number];
+
+/** Compass side of the plan (n = top of the sheet). */
+export type PlanSide = 'n' | 'e' | 's' | 'w';
+
+/** A piece of furniture, for illustration only. */
+export interface PlanFurniture {
+  kind: FurnitureKind;
+  rect: Rect;
+  /** Side of the backrest / headboard / the wall it stands against. */
+  side?: PlanSide;
+}
+
+/**
+ * How the model was made: 'measured' = walls and rooms read off the sheet and checked against
+ * its dimension labels (scripts/plans/measured); 'vector' = traced from the line work of the
+ * 1:100 sheets (scripts/plans/extract-vector.mjs); 'layers' / 'colors' = raster extraction.
+ */
+export type ModelMethod = 'measured' | 'vector' | 'layers' | 'colors';
+
 export interface PlanModel {
   planType: string;
-  source: { file: string; page: number; scale: 50 | 100; method: 'layers' | 'colors' };
+  source: { file: string; page: number; scale: 50 | 100; method: ModelMethod };
   unitsCm: true;
   northDeg: number;
   bounds: readonly [number, number];
@@ -61,6 +104,9 @@ export interface PlanModel {
   openings: readonly PlanOpening[];
   rooms: readonly PlanRoom[];
   outdoor: readonly PlanOutdoor[];
+  /** Balcony railings / parapets (1.05 m). */
+  rails?: readonly Rect[];
+  furniture?: readonly PlanFurniture[];
 }
 
 /** Rooms that count in the apartment's room number ("5 rooms" = salon + 3 bedrooms + mamad). */
@@ -88,7 +134,7 @@ export interface ModelIssue {
 
 /**
  * Sanity checks against the dataset. The contract area includes the walls, so the net room
- * area is expected at 78–95 % of it; outdoor areas within ±10 %.
+ * area is expected at 75–95 % of it (small units have relatively more wall); outdoor areas within ±10 %.
  */
 export function validateModel(
   m: PlanModel,
@@ -107,7 +153,7 @@ export function validateModel(
   }
   for (const a of same) {
     const ratio = net / a.area;
-    if (ratio < 0.78 || ratio > 0.95)
+    if (ratio < 0.75 || ratio > 0.95)
       issues.push({
         level: 'error',
         message: `net ${net.toFixed(1)} m² vs contract ${a.area} m² (${(ratio * 100).toFixed(0)}%)`,
@@ -120,8 +166,10 @@ export function validateModel(
           message: `outdoor ${outdoorArea(m).toFixed(1)} m² vs ${a.outdoor} m²`,
         });
     }
-    if (countedRooms(m) !== Math.floor(a.rooms))
-      issues.push({ level: 'error', message: `${countedRooms(m)} rooms vs ${a.rooms}` });
+    // a "half room" (x.5 rooms) is drawn as a small bedroom, so x or x + 1 counted rooms
+    const counted = countedRooms(m);
+    if (counted < Math.floor(a.rooms) || counted > Math.ceil(a.rooms))
+      issues.push({ level: 'error', message: `${counted} rooms vs ${a.rooms}` });
   }
   const inBounds = (r: Rect) =>
     r[0] >= 0 && r[1] >= 0 && r[0] + r[2] <= m.bounds[0] + 1 && r[1] + r[3] <= m.bounds[1] + 1;
@@ -151,7 +199,33 @@ export function mirrorModel(m: PlanModel, planType: string): PlanModel {
     openings: m.openings.map((o) => ({ ...o, rect: fx(o.rect) })),
     rooms: m.rooms.map(room),
     outdoor: m.outdoor.map(room),
+    ...(m.rails ? { rails: m.rails.map(fx) } : {}),
+    ...(m.furniture
+      ? {
+          furniture: m.furniture.map((f) => ({
+            ...f,
+            rect: fx(f.rect),
+            ...(f.side ? { side: MIRROR_SIDE[f.side] } : {}),
+          })),
+        }
+      : {}),
   };
+}
+
+const MIRROR_SIDE: Readonly<Record<PlanSide, PlanSide>> = { n: 'n', s: 's', e: 'w', w: 'e' };
+
+/**
+ * Largest gap (cm) between a room's drawn dimensions and its measured rectangles: the room's
+ * biggest rectangle is compared with the label in either orientation. null when the sheet
+ * gives no dimensions for the room.
+ */
+export function dimsDeviation(r: PlanRoom): number | null {
+  if (!r.dims) return null;
+  const big = r.rects.reduce((m, q) => (q[2] * q[3] > m[2] * m[3] ? q : m));
+  const [a, b] = r.dims;
+  const straight = Math.max(Math.abs(big[2] - a), Math.abs(big[3] - b));
+  const turned = Math.max(Math.abs(big[2] - b), Math.abs(big[3] - a));
+  return Math.min(straight, turned);
 }
 
 const rectCenter = (r: Rect): [number, number] => [r[0] + r[2] / 2, r[1] + r[3] / 2];

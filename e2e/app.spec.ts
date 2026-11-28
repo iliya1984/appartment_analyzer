@@ -1,5 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
+import { readFileSync } from 'node:fs';
 import { expect, type Page, test } from '@playwright/test';
+import * as XLSX from 'xlsx';
 
 const firstCardLink = (page: Page) => page.locator('article a').first();
 
@@ -82,11 +84,29 @@ test.describe('search, multi-level sort and results export', () => {
     await page.goto('/');
     await page.getByRole('combobox', { name: 'חיפוש לפי טיפוס דירה' }).fill('T6D');
     const download = page.waitForEvent('download');
-    await page.getByRole('button', { name: 'ייצוא 31 הדירות התואמות לאקסל' }).click();
+    await page.getByRole('button', { name: 'ייצוא 31 דירות לאקסל' }).click();
     expect((await download).suggestedFilename()).toMatch(
       /^almogim-apartments-\d{4}-\d{2}-\d{2}\.xlsx$/,
     );
     await expect(page.getByText('הקובץ נשמר: 31 דירות')).toBeVisible();
+  });
+
+  test('Escape in the type search keeps the filter, so the export has only the matches', async ({
+    page,
+  }) => {
+    await page.goto('/');
+    const search = page.getByRole('combobox', { name: 'חיפוש לפי טיפוס דירה' });
+    await search.click();
+    await page.keyboard.type('T6D');
+    await page.keyboard.press('Escape'); // e.g. to close the suggestion list
+    await expect(search).toHaveValue('T6D');
+    await expect(heading(page)).toContainText('(31)');
+    const download = page.waitForEvent('download');
+    await page.getByRole('button', { name: 'ייצוא 31 דירות לאקסל' }).click();
+    const wb = XLSX.read(readFileSync(await (await download).path()), { type: 'buffer' });
+    const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(wb.Sheets['דירות'] ?? {});
+    expect(rows).toHaveLength(31);
+    expect(new Set(rows.map((r) => r['תוכנית']))).toEqual(new Set(['T-T6D']));
   });
 
   test('no serious axe violations with three sort levels', async ({ page }) => {
@@ -165,14 +185,19 @@ test.describe('apartment sheet', () => {
     ).toEqual([]);
   });
 
-  test('orientation enables the sun simulation and is remembered', async ({ page }) => {
-    await page.goto('/?apt=A1-1&tab=schematic');
-    await page.getByRole('combobox').selectOption({ label: 'דרום' });
-    await expect(page.getByText(/שמש ישירה בסלון/)).toBeVisible();
-    await page.getByRole('radio', { name: 'צהריים 12:00' }).click();
-    await expect(page.getByText(/השמש בכיוון/)).toBeVisible();
-    await page.reload();
-    await expect(page.getByRole('combobox')).toHaveValue('180');
+  test('every plan type gets its plan model, with the sun from the plan’s north', async ({
+    page,
+  }) => {
+    // A1-1 (T-T5A) and a penthouse, both traced from the 1:100 sheets
+    for (const apt of ['A1-1', 'D13-18']) {
+      await page.goto(`/?apt=${apt}&tab=schematic`);
+      const dialog = page.getByRole('dialog');
+      await expect(dialog.getByText('מבוסס תוכנית')).toBeVisible();
+      await expect(dialog.getByText('מסדרון').first()).toBeVisible();
+      await expect(page.getByText(/שמש ישירה בסלון/)).toBeVisible();
+      await page.getByRole('radio', { name: 'צהריים 12:00' }).click();
+      await expect(page.getByText(/השמש בכיוון/)).toBeVisible();
+    }
   });
 });
 
@@ -257,8 +282,9 @@ test.describe('my list', () => {
     await page.goto('/my-list');
     await expect(page.getByRole('listitem')).toHaveCount(2);
     await expect(page.getByRole('textbox').first()).toHaveValue('מהאתר הישן');
-    await page.goto('/?apt=B4-15&tab=schematic');
-    await expect(page.getByRole('combobox')).toHaveValue('90');
+    // the saved orientation is kept (it is used for imported plan types without a plan model)
+    const saved = await page.evaluate(() => localStorage.getItem('almogim2181.v2') ?? '');
+    expect(JSON.parse(saved)).toMatchObject({ az: { 'B4-15': 90 } });
   });
 
   test('exports an xlsx file', async ({ page }) => {

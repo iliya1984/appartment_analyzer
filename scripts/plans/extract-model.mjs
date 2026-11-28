@@ -14,7 +14,7 @@
 //  4. Gaps between two wall ends of the same wall band are openings: windows/sliders when one
 //     side is outside or a balcony, otherwise doors.
 //  5. Masks become rectangles (greedy meshing) in centimetres, origin at the unit's top-left.
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const ROOT = join(import.meta.dirname, '..', '..');
@@ -443,6 +443,12 @@ async function main() {
   const outDir = join(ROOT, 'src', 'data', 'plan-models');
   mkdirSync(outDir, { recursive: true });
   for (const t of types) {
+    // Hand-measured models (scripts/plans/measured, `npm run plans:measured`) are more exact:
+    // do not overwrite them unless asked.
+    if (existsSync(join(import.meta.dirname, 'measured', `${t}.json`)) && !args.includes('--force')) {
+      console.log(`${t}: skipped (measured model exists; --force to overwrite)`);
+      continue;
+    }
     const spec = { planType: t, ...specs.models[t] };
     const model = await extract(spec, { debugDir });
     writeFileSync(join(outDir, `${t}.json`), JSON.stringify(model) + '\n');

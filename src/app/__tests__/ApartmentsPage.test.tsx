@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import * as XLSX from 'xlsx';
 import { describe, expect, it, vi } from 'vitest';
 import { builtInDataset } from '@/data/builtIn';
@@ -144,7 +144,7 @@ describe('apartments view', () => {
     const spy = vi.spyOn(download, 'downloadBlob').mockImplementation(() => undefined);
     const { user } = renderApp();
     await user.click(screen.getByRole('button', { name: '3' }));
-    await user.click(screen.getByRole('button', { name: 'ייצוא 101 הדירות התואמות לאקסל' }));
+    await user.click(screen.getByRole('button', { name: 'ייצוא 101 דירות לאקסל' }));
     await waitFor(() => expect(spy).toHaveBeenCalledOnce());
     const [blob, name] = spy.mock.calls[0]!;
     expect(name).toMatch(/^almogim-apartments-\d{4}-\d{2}-\d{2}\.xlsx$/);
@@ -153,10 +153,33 @@ describe('apartments view', () => {
     expect(useUiStore.getState().toast?.message).toBe('הקובץ נשמר: 101 דירות');
   });
 
+  it('exports only the type-search matches, also after Escape in the search field', async () => {
+    const spy = vi.spyOn(download, 'downloadBlob').mockImplementation(() => undefined);
+    const { user } = renderApp();
+    const search = screen.getByRole('combobox', { name: 'חיפוש לפי טיפוס דירה' });
+    await user.type(search, 'T6D{Escape}');
+    expect(search).toHaveValue('T6D');
+    await user.click(screen.getByRole('button', { name: 'ייצוא 31 דירות לאקסל' }));
+    await waitFor(() => expect(spy).toHaveBeenCalledOnce());
+    const wb = XLSX.read(await spy.mock.calls[0]![0].arrayBuffer(), { type: 'array' });
+    const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(wb.Sheets['דירות']!);
+    expect(rows).toHaveLength(31);
+    expect(new Set(rows.map((r) => r['תוכנית']))).toEqual(new Set(['T-T6D']));
+  });
+
+  it('cancels the browser default of Escape in a non-empty search field only', () => {
+    renderApp();
+    const search = screen.getByRole('combobox', { name: 'חיפוש לפי טיפוס דירה' });
+    expect(fireEvent.keyDown(search, { key: 'Escape' })).toBe(true); // empty: default kept
+    fireEvent.change(search, { target: { value: 'T5' } });
+    expect(fireEvent.keyDown(search, { key: 'Escape' })).toBe(false); // prevented
+    expect(search).toHaveValue('T5');
+  });
+
   it('disables the export when nothing matches', async () => {
     const { user } = renderApp();
     await user.type(screen.getByRole('combobox', { name: 'חיפוש לפי טיפוס דירה' }), 'ZZZ');
-    expect(screen.getByRole('button', { name: 'ייצוא 0 הדירות התואמות לאקסל' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'ייצוא 0 דירות לאקסל' })).toBeDisabled();
   });
 
   it('shows card tags for price comparison and unpublished prices', async () => {
