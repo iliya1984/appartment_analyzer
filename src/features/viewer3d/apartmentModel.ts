@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import type { Orientation } from '@/domain/orientation';
 import { layoutFor, ROOM_COLOR } from '@/domain/schematic';
 import { solarPosition } from '@/domain/solar';
+import type { PlanModel } from '@/domain/planModel';
 import type { Apartment } from '@/domain/types';
 import { r1 } from '@/domain/format';
 import { he } from '@/i18n/he';
@@ -36,10 +37,16 @@ export interface ApartmentModel {
   /** Initial camera distance. */
   cameraDistance: number;
   orientationKnown: boolean;
+  /** Upper wall parts (above the dollhouse cut); toggled by the wall-height switch. */
+  wallTops: THREE.Object3D[];
+  /** Plan-based models: the source geometry (walk-through collisions, start point). */
+  plan?: PlanModel;
+  /** Size of the unit on the ground (m). */
+  size: { w: number; d: number };
 }
 
 /** Canvas texture label (room name + size). Draws nothing when 2D canvas is unavailable. */
-function makeLabel(name: string, sub: string): THREE.Sprite {
+export function makeLabel(name: string, sub: string): THREE.Sprite {
   const c = document.createElement('canvas');
   c.width = 320;
   c.height = 120;
@@ -67,18 +74,13 @@ function makeLabel(name: string, sub: string): THREE.Sprite {
   return sp;
 }
 
-export function buildApartmentModel(a: Apartment, orientation: Orientation | null): ApartmentModel {
-  const scene = new THREE.Scene();
-  const L = layoutFor(a);
-  const { W, D } = L;
-  const R = Math.max(W, D) * 0.85 + 3;
-  const known = orientation != null;
-
+/** Sky light, sun (with shadows over a radius R), visible sun disc and ground. */
+export function addEnvironment(scene: THREE.Scene, R: number, shadowMap = 2048) {
   const hemi = new THREE.HemisphereLight(0xdfeefa, 0x8a8372, 0.55 * LIGHT_SCALE);
   scene.add(hemi);
   const sun = new THREE.DirectionalLight(0xfff1d0, 1 * LIGHT_SCALE);
   sun.castShadow = true;
-  sun.shadow.mapSize.set(2048, 2048);
+  sun.shadow.mapSize.set(shadowMap, shadowMap);
   sun.shadow.bias = -0.0004;
   Object.assign(sun.shadow.camera, { left: -R, right: R, top: R, bottom: -R, near: 1, far: 120 });
   scene.add(sun);
@@ -96,6 +98,33 @@ export function buildApartmentModel(a: Apartment, orientation: Orientation | nul
   ground.position.y = -0.22;
   ground.receiveShadow = true;
   scene.add(ground);
+  return { hemi, sun, sunBall, ground };
+}
+
+/** North arrow + label on the ground at radius R (north = -z). */
+export function addNorthMarker(scene: THREE.Scene, R: number): void {
+  const north = makeLabel(he.schematic.north, 'N');
+  north.position.set(0, 0.6, -(R + 1.5));
+  north.name = 'north-label';
+  scene.add(north);
+  const cone = new THREE.Mesh(
+    new THREE.ConeGeometry(0.28, 0.9, 16),
+    new THREE.MeshBasicMaterial({ color: 0xd94a4a }),
+  );
+  cone.position.set(0, 0.3, -(R - 0.3));
+  cone.rotation.x = -Math.PI / 2;
+  cone.name = 'north-arrow';
+  scene.add(cone);
+}
+
+export function buildApartmentModel(a: Apartment, orientation: Orientation | null): ApartmentModel {
+  const scene = new THREE.Scene();
+  const L = layoutFor(a);
+  const { W, D } = L;
+  const R = Math.max(W, D) * 0.85 + 3;
+  const known = orientation != null;
+
+  const { hemi, sun, sunBall, ground } = addEnvironment(scene, R);
 
   const outer = new THREE.Group();
   const g = new THREE.Group();
@@ -305,20 +334,7 @@ export function buildApartmentModel(a: Apartment, orientation: Orientation | nul
     g.add(sp);
     labels.push(sp);
   }
-  if (known) {
-    const north = makeLabel(he.schematic.north, 'N');
-    north.position.set(0, 0.6, -(R + 1.5));
-    north.name = 'north-label';
-    scene.add(north);
-    const cone = new THREE.Mesh(
-      new THREE.ConeGeometry(0.28, 0.9, 16),
-      new THREE.MeshBasicMaterial({ color: 0xd94a4a }),
-    );
-    cone.position.set(0, 0.3, -(R - 0.3));
-    cone.rotation.x = -Math.PI / 2;
-    cone.name = 'north-arrow';
-    scene.add(cone);
-  }
+  if (known) addNorthMarker(scene, R);
 
   const model: ApartmentModel = {
     scene,
@@ -330,6 +346,8 @@ export function buildApartmentModel(a: Apartment, orientation: Orientation | nul
     outer,
     cameraDistance: Math.max(W, D) * 1.45 + 3,
     orientationKnown: known,
+    wallTops: [],
+    size: { w: W, d: D },
   };
   if (!known) applyNeutralLight(model);
   return model;

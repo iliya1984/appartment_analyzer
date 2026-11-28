@@ -1,9 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Orientation } from '@/domain/orientation';
+import type { PlanModel } from '@/domain/planModel';
 import type { Apartment } from '@/domain/types';
 import { he } from '@/i18n/he';
 import styles from './ApartmentViewer.module.css';
-import { createApartmentScene, type SceneHandle, type SceneOptions } from './createApartmentScene';
+import {
+  createApartmentScene,
+  type SceneHandle,
+  type SceneOptions,
+  type ViewMode,
+} from './createApartmentScene';
 
 export interface ApartmentViewerProps {
   apartment: Apartment;
@@ -14,6 +20,13 @@ export interface ApartmentViewerProps {
   labels: boolean;
   /** Called when the user drags the model (auto-rotate turns off). */
   onUserInteract?: () => void;
+  /** Real geometry from the plans (else the schematic). */
+  plan?: PlanModel | null;
+  view?: ViewMode;
+  /** Dollhouse cut: walls end at 1.2 m. */
+  wallsCut?: boolean;
+  /** Receives the scene handle (reset, walk buttons) and null on unmount. */
+  onHandle?: (h: SceneHandle | null) => void;
   /** For tests. */
   createRenderer?: SceneOptions['createRenderer'];
 }
@@ -36,14 +49,20 @@ export function ApartmentViewer({
   autoRotate,
   labels,
   onUserInteract,
+  plan = null,
+  view = 'dollhouse',
+  wallsCut = true,
+  onHandle,
   createRenderer,
 }: ApartmentViewerProps) {
   const host = useRef<HTMLDivElement>(null);
   const handle = useRef<SceneHandle | null>(null);
   const [failed] = useState(() => !createRenderer && !isWebGLAvailable());
   const interact = useRef(onUserInteract);
+  const handleCb = useRef(onHandle);
   useEffect(() => {
     interact.current = onUserInteract;
+    handleCb.current = onHandle;
   });
 
   useEffect(() => {
@@ -53,6 +72,7 @@ export function ApartmentViewer({
     try {
       h = createApartmentScene(el, apartment, orientation, {
         onUserInteract: () => interact.current?.(),
+        plan,
         ...(createRenderer ? { createRenderer } : {}),
       });
     } catch {
@@ -64,25 +84,35 @@ export function ApartmentViewer({
       return;
     }
     handle.current = h;
+    handleCb.current?.(h);
     return () => {
       h.dispose();
       handle.current = null;
+      handleCb.current?.(null);
     };
-  }, [apartment, orientation, createRenderer]);
+  }, [apartment, orientation, plan, createRenderer]);
+
+  useEffect(() => {
+    handle.current?.setView(view);
+  }, [view, apartment, orientation, plan]);
+
+  useEffect(() => {
+    handle.current?.setWallsCut(view !== 'walk' && wallsCut);
+  }, [wallsCut, view, apartment, orientation, plan]);
 
   const hour = sun?.hour;
   const doy = sun?.dayOfYear;
   useEffect(() => {
     if (hour != null && doy != null) handle.current?.setSun(hour, doy);
-  }, [hour, doy, apartment, orientation]);
+  }, [hour, doy, apartment, orientation, plan]);
 
   useEffect(() => {
     handle.current?.setAutoRotate(autoRotate);
-  }, [autoRotate, apartment, orientation]);
+  }, [autoRotate, apartment, orientation, plan]);
 
   useEffect(() => {
     handle.current?.setLabels(labels);
-  }, [labels, apartment, orientation]);
+  }, [labels, apartment, orientation, plan]);
 
   if (failed) {
     return (
@@ -94,7 +124,11 @@ export function ApartmentViewer({
   return (
     <div className={styles.stage} ref={host} role="img" aria-label={he.schematic.stageLabel}>
       <span className={styles.hint} aria-hidden="true">
-        {he.schematic.hint}
+        {view === 'walk'
+          ? he.model.walkHint
+          : view === 'top'
+            ? he.model.topHint
+            : he.schematic.hint}
       </span>
     </div>
   );

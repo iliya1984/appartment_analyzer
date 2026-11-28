@@ -1,0 +1,33 @@
+{
+  "$comment": "Per plan type: source page, how to find walls, the unit crop box (PDF points, top-left origin) and one seed per room. Seeds are the room-name positions on the sheet. Run: npm run plans:model",
+  "models": {
+    "T-T5C": {
+      "file": "Shmurat-Almogim-637-ALL_M215_מכר-637-215-D15-2-3-4-5-T-T5C-50.pdf",
+      "page": 1,
+      "scale": 50,
+      "method": "layers",
+      "wallLayers": "(^|[|])00-(walls|walls_ in|hatch-w1?)$",
+      "openingLayers": "(^|[|])00-windoors$",
+      "cropPt": [745, 175, 1610, 1012],
+      "northDeg": 0,
+      "entrancePt": [1036, 964],
+      "rooms": [
+        { "type": "bed", "label": "חדר שינה", "at": [882, 300] },
+        { "type": "bed", "label": "חדר שינה", "at": [1091, 300] },
+        { "type": "master", "label": "חדר הורים", "at": [1255, 355] },
+        { "type": "bath", "label": "רחצת הורים", "at": [1273, 536] },
+        { "type": "wc", "label": "מקלחת", "at": [1091, 527] },
+        { "type": "storage", "label": "ארון", "at": [1141, 518] },
+        { "type": "hall", "label": "מסדרון", "at": [1027, 473] },
+        { "type": "service", "label": "חדר שירות", "at": [845, 427] },
+        { "type": "wc", "label": "שירותים", "at": [827, 564] },
+        { "type": "bath", "label": "רחצה", "at": [927, 582] },
+        { "type": "mamad", "label": "ממ״ד / חדר", "at": [891, 709] },
+        { "type": "salon", "label": "סלון", "at": [1182, 718] },
+        { "type": "kitchen", "label": "מטבח", "at": [886, 873] },
+        { "type": "dining", "label": "פינת אוכל", "at": [1155, 936] },
+        { "type": "balcony", "label": "מרפסת שמש", "at": [1455, 636], "outdoor": true, "covered": true }
+      ]
+    }
+  }
+}

@@ -20,7 +20,7 @@
   align-items: stretch;
 }
 .floor {
-  width: 68px;
+  width: 96px;
   white-space: nowrap;
   flex: none;
   font-size: 13px;
@@ -65,4 +65,39 @@
 }
 .tile:hover {
   filter: brightness(1.08);
+}
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.plansLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  color: var(--sea);
+  text-decoration: none;
+  border: 1px solid var(--line);
+  background: var(--surface2);
+  border-radius: 10px;
+  padding: 6px 12px;
+  min-height: 38px;
+}
+.plansLink svg,
+.floorPlan svg {
+  width: 18px;
+  height: 18px;
+}
+.floorPlan {
+  display: inline-grid;
+  place-items: center;
+  vertical-align: middle;
+  margin-inline-start: 4px;
+  width: 28px;
+  height: 28px;
+  color: var(--sea);
+  border-radius: 6px;
 }

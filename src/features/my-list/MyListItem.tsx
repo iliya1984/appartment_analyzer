@@ -1,6 +1,6 @@
 import { floorLabel, fmt, m2, money, pct } from '@/domain/format';
 import type { Apartment } from '@/domain/types';
-import { ApartmentLink } from '@/features/apartment-detail';
+import { ApartmentLink, PlanLink } from '@/features/apartment-detail';
 import { he } from '@/i18n/he';
 import { controlClasses } from '@/shared/ui/Button';
 import styles from './MyList.module.css';
@@ -45,6 +45,7 @@ export function MyListItem({
           <span className="muted num">{detail}</span>
         </ApartmentLink>
         <div className={styles.buttons}>
+          <PlanLink apartment={a} className={styles.planLink} />
           <button
             type="button"
             aria-label={T.moveUp}

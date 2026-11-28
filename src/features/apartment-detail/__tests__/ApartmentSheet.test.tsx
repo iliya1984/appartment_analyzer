@@ -9,6 +9,7 @@ import { currentLocation, renderApp } from '@/test/renderApp';
 
 // The real viewer needs WebGL; its own tests cover it.
 vi.mock('@/features/viewer3d', () => ({
+  VIEW_MODES: ['dollhouse', 'top', 'walk'],
   ApartmentViewer: (p: { orientation: number | null; sun: unknown }) => (
     <div
       data-testid="viewer"
@@ -40,7 +41,9 @@ describe('apartment sheet', () => {
 
   it('opens from a card link and closes with Escape (back to the list)', async () => {
     const { user } = renderApp('/');
-    await user.click(within(screen.getAllByRole('article')[0]!).getByRole('link'));
+    await user.click(
+      within(screen.getAllByRole('article')[0]!).getByRole('link', { name: /^בניין/ }),
+    );
     expect(await screen.findByRole('dialog')).toBeInTheDocument();
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();

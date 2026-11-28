@@ -16,7 +16,7 @@ test.describe('navigation and views', () => {
       page.getByText('הגרלה 2181 · 406 דירות · 15 בניינים · 325 במחיר מטרה'),
     ).toBeVisible();
     await firstCardLink(page).click();
-    await page.getByRole('tab', { name: 'הדמיה סכמטית' }).click();
+    await page.getByRole('tab', { name: 'הדמיה תלת־ממדית' }).click();
     await expect(page.locator('canvas')).toBeVisible();
     expect(external).toEqual([]);
   });
@@ -112,6 +112,55 @@ test.describe('apartment sheet', () => {
   });
 });
 
+test.describe('floor plans', () => {
+  test('the plans tab shows the real sheet; hotspots open neighbours', async ({ page }) => {
+    await page.goto('/?apt=A1-1&tab=plans');
+    const sheet = page.getByRole('img', { name: /בניין A1. הדירה מסומנת: T-T5A/ });
+    await expect(sheet).toBeVisible();
+    // the image really loaded (pre-rendered WebP from resources/plans_rendered)
+    await expect
+      .poll(() => sheet.evaluate((i: HTMLImageElement) => i.naturalWidth), { timeout: 15_000 })
+      .toBeGreaterThan(1500);
+    await page.getByRole('radio', { name: 'הקומה' }).click();
+    await page.getByRole('button', { name: /^דירה 3 · T-T6D/ }).click();
+    await expect(page.getByRole('heading', { name: 'בניין A1 · דירה 3 · קומה 1' })).toBeVisible();
+    await expect(page).toHaveURL(/apt=A1-3.*tab=plans/);
+  });
+
+  test('pan and zoom with the wheel and the buttons', async ({ page }) => {
+    await page.goto('/?apt=A1-1&tab=plans&pmode=floor');
+    const content = page.getByTestId('plan-content');
+    await expect(content).toBeVisible();
+    const before = await content.getAttribute('style');
+    await page.getByRole('button', { name: 'הגדלה' }).click();
+    await expect.poll(() => content.getAttribute('style')).not.toBe(before);
+    await page.getByRole('button', { name: 'התאמה למסך' }).click();
+    await expect.poll(() => content.getAttribute('style')).toBe(before);
+  });
+
+  test('building plans page from the elevation', async ({ page }) => {
+    await page.goto('/');
+    await page.getByRole('button', { name: /^בניין B4,/ }).click();
+    await page.getByTestId('elevation').getByRole('link', { name: 'תוכניות קומה' }).click();
+    await expect(page.getByRole('heading', { name: 'תוכניות בניין B4' })).toBeVisible();
+    await page
+      .getByRole('navigation', { name: 'גיליונות הבניין' })
+      .getByRole('button', { name: 'גג' })
+      .click();
+    await expect(page).toHaveURL(/sheet=B4-p3/);
+  });
+
+  test('the 3D tab uses the plan model for T-T5C', async ({ page }) => {
+    await page.goto('/?apt=D15-5&tab=schematic');
+    await expect(page.getByText('מבוסס תוכנית ✓')).toBeVisible({ timeout: 15_000 });
+    await expect(page.locator('canvas')).toBeVisible({ timeout: 15_000 });
+    await page.getByRole('radio', { name: 'סיור' }).click();
+    await page.getByRole('button', { name: 'קדימה' }).click();
+    await page.getByRole('radio', { name: 'מבט על' }).click();
+    await expect(page.locator('canvas')).toBeVisible();
+  });
+});
+
 test.describe('my list', () => {
   test('stars, notes and order survive a reload', async ({ page }) => {
     await page.goto('/');
@@ -166,8 +215,13 @@ test.describe('layout and accessibility', () => {
     '/data',
     '/?apt=A1-1&tab=insights',
     '/?apt=A1-1&tab=building',
+    '/?apt=A1-1&tab=plans',
+    '/?apt=A1-1&tab=plans&pmode=building',
+    '/buildings/A1/plans?floor=9',
+    '/?apt=D15-5&tab=schematic',
   ]) {
     test(`no serious axe violations on ${path}`, async ({ page }) => {
+      test.setTimeout(60_000); // WebGL pages render slowly on software GL in CI
       await page.goto(path);
       await page.waitForLoadState('networkidle');
       const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();

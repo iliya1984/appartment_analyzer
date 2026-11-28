@@ -8,3 +8,6 @@ legacy
 fixtures
 plans
 src/data/apartments.data.ts
+resources
+src/data/floor-plans/sheets.generated.json
+src/data/plan-models/*.json

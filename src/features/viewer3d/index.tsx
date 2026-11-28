@@ -28,3 +28,5 @@ export function ApartmentViewer(props: ApartmentViewerProps) {
 }
 
 export type { ApartmentViewerProps };
+export type { SceneHandle, ViewMode } from './createApartmentScene';
+export { VIEW_MODES } from './viewModes';

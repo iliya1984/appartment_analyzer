@@ -1,6 +1,37 @@
 # Plan: 3D visualisation of each apartment from the real plans
 
-Status: proposed · Date: 2026-11-27 · Scope: replace the generated schematic 3D model (`src/domain/schematic.ts` + `src/features/viewer3d`) with a model built from the contractor's sales plans. The schematic stays as a fallback. Companion plan: [floor-plan-viewer.md](floor-plan-viewer.md), which supplies the sheet manifest, unit regions and north angles used here.
+Date: 2026-11-27 · Scope: replace the generated schematic 3D model (`src/domain/schematic.ts` + `src/features/viewer3d`) with a model built from the contractor's sales plans. The schematic stays as a fallback. Companion plan: [floor-plan-viewer.md](floor-plan-viewer.md), which supplies the sheet manifest, unit regions and north angles used here.
+
+Status: **phase 1 and the viewer are implemented** (see §0) · Updated 2026-11-28.
+
+---
+
+## 0. Implementation status (2026-11-28)
+
+**Built**
+- Extractor: `npm run plans:model -- <type>` (`scripts/plans/extract-model.mjs`), with per-type specs in `scripts/plans/model-specs.json`. It works on a raster at 2 cm/px:
+  - Walls come from the CAD layers, or from fill colours on 1:100 sheets.
+  - Thin enclosed outlines are treated as wall interiors.
+  - Rooms are split at door-sized necks by eroding 44 cm and growing back. One seed per room sets its type and name; several seeds in one space make an open-plan label.
+  - Openings are gaps between wall ends. They become windows or sliders when one side is outdoors, otherwise doors, and the entrance is placed from a seed point.
+- Geometry is stored as **unions of rectangles** rather than polygons. This is exact for the raster and simpler to extrude.
+- **T-T5C** is modelled from the D15 1:50 sheet and covers 8 apartments (D15 and D13).
+  - 11 rooms, 108.6 m² net against 128.2 m² contract (85 %).
+  - Balcony 40.5 m² against 43.0 m².
+  - Windows measure about 118 cm against the 115–120 cm dimension labels.
+  - The salon faces east.
+- App:
+  - `src/domain/planModel.ts`: validation, `salonFacade`, mirroring, collision and the walk start point.
+  - `src/data/plan-models/`: Zod schema, with each model in its own lazy chunk.
+  - `src/features/viewer3d/planModelScene.ts`: merged walls split at the 1.2 m cut, sills, lintels and glass, floors per room, an invisible ceiling for sun patches, and labels.
+  - `createApartmentScene`: dollhouse, orthographic top view (north up) and walk-through (keys, drag-look, buttons, wall collision).
+  - The 3D tab shows a view switch, the "מבוסס תוכנית" or "סכמטי" badge, overlays, the walk pad, the real rooms table, and automatic orientation from the plan.
+- Tests: model validation against the dataset, a scene builder without WebGL, camera and view switching, walking and collision, and tab UI tests.
+
+**Not done yet**
+- Models for the other ~40 plan types. The heuristic 1:100 path (`method: "colors"`) exists in the extractor, but it needs a unit crop and room seeds for each type, so the remaining types still show the schematic.
+- The dev model editor (`/dev/plan-model-editor`). Seeds are edited in `model-specs.json` instead.
+- Ghost floors, neighbour massing and furniture (phase 6).
 
 ---
 

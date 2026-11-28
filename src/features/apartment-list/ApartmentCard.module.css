@@ -50,6 +50,31 @@
   position: relative;
   z-index: 1;
 }
+.actions {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.planLink {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--surface2);
+  color: var(--sea);
+}
+.planLink svg {
+  width: 22px;
+  height: 22px;
+}
+.planLink:focus-visible {
+  outline: 3px solid var(--sea);
+  outline-offset: 2px;
+}
 .price {
   font-family: var(--font-d);
   font-weight: 900;

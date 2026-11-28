@@ -14,3 +14,97 @@
 .readout b {
   color: var(--ink);
 }
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.views {
+  flex: 1 1 260px;
+}
+.badge {
+  margin-inline-start: auto;
+  border-radius: 99px;
+  padding: 4px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.badgePlan {
+  background: var(--good-soft);
+  color: var(--good);
+}
+.badgeSchematic {
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+.smallBtn {
+  min-height: 36px;
+  padding: 5px 12px;
+}
+.frame {
+  position: relative;
+}
+.full {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: var(--bg);
+  padding: 10px;
+}
+.frame:fullscreen {
+  background: var(--bg);
+  padding: 10px;
+}
+/* overlays: inline end (left in RTL) for view tools, inline start for toggles */
+.overlayEnd {
+  position: absolute;
+  top: 10px;
+  inset-inline-end: 10px;
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+}
+.overlayEnd button,
+.walkPad button {
+  background: rgba(255, 255, 255, 0.92);
+  color: #10242c;
+  width: 40px;
+  height: 40px;
+  font-size: 18px;
+}
+.compass {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  color: #10242c;
+  font-size: 10px;
+  line-height: 1;
+}
+.compass b {
+  color: #b93434;
+  font-size: 16px;
+  display: inline-block;
+}
+.overlayStart {
+  position: absolute;
+  bottom: 34px;
+  inset-inline-start: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.walkPad {
+  position: absolute;
+  bottom: 34px;
+  inset-inline-end: 10px;
+  display: grid;
+  grid-template-columns: repeat(2, 40px);
+  gap: 6px;
+}

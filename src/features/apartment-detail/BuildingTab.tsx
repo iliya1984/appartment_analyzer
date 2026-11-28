@@ -1,18 +1,27 @@
+import { Link } from 'react-router';
+import { sheetsForBuilding } from '@/domain/floorPlans';
 import { floorLabel, fmt, m2 } from '@/domain/format';
 import { sameFloorUnits, samePlanUnits } from '@/domain/related';
 import type { Apartment } from '@/domain/types';
+import { floorPlanManifest } from '@/data/floor-plans/manifest';
+import { buildingPlansPath } from '@/features/floor-plans';
 import { HighlightedSiteMap } from '@/features/site-map';
 import { he } from '@/i18n/he';
+import { Button, controlClasses } from '@/shared/ui/Button';
 import { Fact, Facts, Section, TwoColumns } from '@/shared/ui/Content';
 import { useDataset } from '@/store/selectors';
+import { useOpenApartment } from './navigation';
+import styles from './BuildingTab.module.css';
 import { UnitsTable } from './UnitsTable';
 
 const T = he.buildingTab;
 
 export function BuildingTab({ apartment: a }: { apartment: Apartment }) {
   const dataset = useDataset();
+  const open = useOpenApartment();
   const st = dataset.buildingStats.get(a.building);
   if (!st) return null;
+  const sheetCount = sheetsForBuilding(floorPlanManifest, a.building).length;
   return (
     <>
       <Section title={T.onMap(a.building)}>
@@ -36,6 +45,16 @@ export function BuildingTab({ apartment: a }: { apartment: Apartment }) {
             />
           )}
         </Facts>
+        {sheetCount > 0 && (
+          <div className={styles.planLinks}>
+            <Link className={controlClasses.btn} to={buildingPlansPath(a.building, a.floor)}>
+              {he.plans.buildingPlans(sheetCount)}
+            </Link>
+            <Button onClick={() => open(a.id, 'plans', { mode: 'floor' })}>
+              {he.plans.floorPlan}
+            </Button>
+          </div>
+        )}
       </Section>
       <TwoColumns>
         <Section title={T.onFloor(floorLabel(a.floor))}>
