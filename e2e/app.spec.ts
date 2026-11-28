@@ -42,6 +42,70 @@ test.describe('navigation and views', () => {
   });
 });
 
+test.describe('search, multi-level sort and results export', () => {
+  const heading = (page: Page) => page.getByRole('heading', { name: /^דירות/ });
+
+  test('searches by apartment type', async ({ page }) => {
+    await page.goto('/');
+    const search = page.getByRole('combobox', { name: 'חיפוש לפי טיפוס דירה' });
+    await search.fill('t6d');
+    await expect(heading(page)).toContainText('(31)');
+    await search.fill('T6D, P1');
+    await expect(heading(page)).toContainText('(46)');
+    await page.getByRole('button', { name: 'ניקוי החיפוש' }).click();
+    await expect(heading(page)).toContainText('(406)');
+  });
+
+  test('sorts by rooms, then floor from high to low', async ({ page }) => {
+    await page.goto('/');
+    await page.getByRole('combobox', { name: 'שדה מיון 1' }).selectOption('rooms');
+    await page.getByRole('button', { name: 'הוספת רמת מיון' }).click();
+    await page.getByRole('combobox', { name: 'שדה מיון 2' }).selectOption('floor');
+    await page.getByRole('button', { name: /^כיוון מיון 2:/ }).click();
+    await expect(page.getByTestId('sort-summary')).toHaveText(
+      'מיון: חדרים (מהמעט להרבה), ואז קומה (מהגבוהה לנמוכה)',
+    );
+    // the first cards are 3-room apartments, floors descending
+    const cards = await page.locator('article').evaluateAll((els) =>
+      els.slice(0, 6).map((e) => ({
+        text: e.textContent,
+        link: e.querySelector('a')?.textContent ?? '',
+      })),
+    );
+    for (const c of cards) expect(c.text).toContain('3 חדרים');
+    const floors = cards.map((c) => Number(/קומה (-?\d+)$/.exec(c.link.trim())?.[1]));
+    expect(floors.every(Number.isFinite)).toBe(true);
+    expect(floors).toEqual([...floors].sort((a, b) => b - a));
+  });
+
+  test('exports the filtered results as xlsx', async ({ page }) => {
+    await page.goto('/');
+    await page.getByRole('combobox', { name: 'חיפוש לפי טיפוס דירה' }).fill('T6D');
+    const download = page.waitForEvent('download');
+    await page.getByRole('button', { name: 'ייצוא 31 הדירות התואמות לאקסל' }).click();
+    expect((await download).suggestedFilename()).toMatch(
+      /^almogim-apartments-\d{4}-\d{2}-\d{2}\.xlsx$/,
+    );
+    await expect(page.getByText('הקובץ נשמר: 31 דירות')).toBeVisible();
+  });
+
+  test('no serious axe violations with three sort levels', async ({ page }) => {
+    await page.goto('/');
+    await page.getByRole('button', { name: 'הוספת רמת מיון' }).click();
+    await page.getByRole('button', { name: 'הוספת רמת מיון' }).click();
+    await page.getByRole('combobox', { name: 'חיפוש לפי טיפוס דירה' }).fill('T5');
+    const results = await new AxeBuilder({ page })
+      .include('details')
+      .withTags(['wcag2a', 'wcag2aa'])
+      .analyze();
+    expect(
+      results.violations
+        .filter((v) => v.impact === 'serious' || v.impact === 'critical')
+        .map((v) => v.id),
+    ).toEqual([]);
+  });
+});
+
 test.describe('apartment sheet', () => {
   test('opens from a card; Escape, Back, close button and outside click close it', async ({
     page,

@@ -45,3 +45,21 @@
   flex-wrap: wrap;
   align-items: center;
 }
+/* Type search: the first, full-width row of the grid. */
+.search {
+  grid-column: 1 / -1;
+}
+.searchRow {
+  display: flex;
+  gap: 8px;
+}
+.searchRow button {
+  min-width: 42px;
+  padding-inline: 0;
+}
+.hint {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--muted);
+}

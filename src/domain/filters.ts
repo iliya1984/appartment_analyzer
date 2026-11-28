@@ -1,4 +1,5 @@
-import { type SortKey, sortApartments } from './sort';
+import { matchesTypeQuery } from './search';
+import { DEFAULT_SORT, type SortSpec, sortApartments } from './sort';
 import type { Apartment, Dataset } from './types';
 
 export type CategoryFilter = 'all' | 'target' | 'free';
@@ -23,7 +24,10 @@ export interface Filters {
   category: CategoryFilter;
   flags: readonly FlagFilter[];
   storageFloors: readonly string[];
-  sort: SortKey;
+  /** Normalised apartment-type tokens (see `parseTypeQuery`); empty = no restriction. */
+  typeQuery: readonly string[];
+  /** Sort levels, most significant first. */
+  sort: SortSpec;
 }
 
 export const DEFAULT_FILTERS: Filters = Object.freeze({
@@ -36,7 +40,8 @@ export const DEFAULT_FILTERS: Filters = Object.freeze({
   category: 'all',
   flags: [],
   storageFloors: [],
-  sort: 'ppsqm',
+  typeQuery: [],
+  sort: DEFAULT_SORT,
 });
 
 /** True when the apartment passes every active filter (sort is ignored). */
@@ -52,6 +57,7 @@ export function matches(a: Apartment, f: Filters): boolean {
   if (f.flags.includes('pent') && a.kind !== 'P') return false;
   if (f.flags.includes('top') && !a.isTopFloor) return false;
   if (f.storageFloors.length && !f.storageFloors.includes(a.storage.floor)) return false;
+  if (f.typeQuery.length && !matchesTypeQuery(a, f.typeQuery)) return false;
   return true;
 }
 

@@ -10,6 +10,7 @@ import {
   pickSingleBuilding,
   toggleIn,
 } from '@/domain/filters';
+import { SORT_PRESETS } from '@/domain/sort';
 import { dataset, row } from '@/test/factories';
 
 const d = dataset([
@@ -72,17 +73,32 @@ describe('matches', () => {
   });
 });
 
+describe('type search', () => {
+  it('ANDs the type tokens with the other filters', () => {
+    expect(matches(ground, f({ typeQuery: ['G3'] }))).toBe(true);
+    expect(matches(pent, f({ typeQuery: ['G3'] }))).toBe(false);
+    expect(matches(pent, f({ typeQuery: ['G3', 'P6'] }))).toBe(true);
+    expect(matches(pent, f({ typeQuery: ['P6'], rooms: [3] }))).toBe(false);
+    expect(matches(mid, f({ typeQuery: [] }))).toBe(true);
+  });
+
+  it('narrows the per-building counts', () => {
+    expect(Object.fromEntries(countByBuilding(d.apartments, f({ typeQuery: ['P'] })))).toEqual({
+      B2: 1,
+    });
+  });
+});
+
 describe('applyFilters / countByBuilding', () => {
   it('filters then sorts', () => {
-    expect(applyFilters(d, f({ sort: 'floor' })).map((a) => a.id)).toEqual([
+    expect(applyFilters(d, f({ sort: SORT_PRESETS.floor })).map((a) => a.id)).toEqual([
       'B2-1',
       'A1-2',
       'A1-1',
     ]);
-    expect(applyFilters(d, f({ buildings: ['A1'], sort: 'priceD' })).map((a) => a.id)).toEqual([
-      'A1-2',
-      'A1-1',
-    ]);
+    expect(
+      applyFilters(d, f({ buildings: ['A1'], sort: SORT_PRESETS.priceD })).map((a) => a.id),
+    ).toEqual(['A1-2', 'A1-1']);
   });
 
   it('counts matches per building, omitting buildings with none', () => {
