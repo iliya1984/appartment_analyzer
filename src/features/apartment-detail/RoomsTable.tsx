@@ -42,6 +42,7 @@ export function PlanRoomsTable({ apartment, model }: { apartment: Apartment; mod
         <thead>
           <tr>
             <th>{TM.colRoom}</th>
+            <th>{TM.colDims}</th>
             <th>{TM.colArea}</th>
           </tr>
         </thead>
@@ -49,11 +50,20 @@ export function PlanRoomsTable({ apartment, model }: { apartment: Apartment; mod
           {rows.map((r) => (
             <tr key={r.id}>
               <td>{r.label}</td>
+              <td className={tableClasses.n}>
+                {r.dims && (
+                  <>
+                    <span dir="ltr">{TM.dims(r.dims[0], r.dims[1])}</span> {TM.metres}
+                  </>
+                )}
+              </td>
               <td className={tableClasses.n}>{T.area(r.areaM2.toFixed(1))}</td>
             </tr>
           ))}
           <tr>
-            <th scope="row">{TM.totalNet}</th>
+            <th scope="row" colSpan={2}>
+              {TM.totalNet}
+            </th>
             <td className={tableClasses.n}>{T.area(netArea(model).toFixed(1))}</td>
           </tr>
         </tbody>

@@ -1,7 +1,21 @@
-import { screen, within } from '@testing-library/react';
+import { act, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useUiStore } from '@/store/uiStore';
+import { useDatasetStore } from '@/store/datasetStore';
 import { currentLocation, renderApp } from '@/test/renderApp';
+import { dataset, row } from '@/test/factories';
+
+/** Every built-in plan type has a plan model now; the schematic is for imported unknown types. */
+function switchToUnmodelledApartment() {
+  act(() =>
+    useDatasetStore
+      .getState()
+      .setDataset(dataset([row({ unit: 1, plan: 'T-X5Z', rooms: 5, area: 125 })]), {
+        kind: 'file',
+        fileName: 'imported.xlsx',
+      }),
+  );
+}
 
 const walk = vi.fn();
 const reset = vi.fn();
@@ -103,8 +117,9 @@ describe('3D tab with a plan-based model', () => {
     expect(p.get('pmode')).toBe('unit');
   });
 
-  it('apartments without a plan model keep the schematic, marked as such', async () => {
+  it('apartments of a plan type without a model (imported file) keep the schematic, marked as such', async () => {
     renderApp('/?apt=A1-1&tab=schematic');
+    switchToUnmodelledApartment();
     const dialog = await screen.findByRole('dialog');
     expect(within(dialog).getByText('סכמטי')).toHaveAttribute(
       'title',

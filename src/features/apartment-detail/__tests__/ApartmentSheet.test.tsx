@@ -1,11 +1,25 @@
-import { screen, within } from '@testing-library/react';
+import { act, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { builtInDataset } from '@/data/builtIn';
 import { getKpis, getGaugeLabels } from '@/features/apartment-detail/kpis';
 import { useMyListStore } from '@/store/myListStore';
 import { useUiStore } from '@/store/uiStore';
 import { legacyFixture } from '@/test/legacyFixture';
+import { useDatasetStore } from '@/store/datasetStore';
 import { currentLocation, renderApp } from '@/test/renderApp';
+import { dataset, row } from '@/test/factories';
+
+/** Every built-in plan type has a plan model now; the schematic is for imported unknown types. */
+function switchToUnmodelledApartment() {
+  act(() =>
+    useDatasetStore
+      .getState()
+      .setDataset(dataset([row({ unit: 1, plan: 'T-X5Z', rooms: 5, area: 125 })]), {
+        kind: 'file',
+        fileName: 'imported.xlsx',
+      }),
+  );
+}
 
 // The real viewer needs WebGL; its own tests cover it.
 vi.mock('@/features/viewer3d', () => ({
@@ -93,8 +107,9 @@ describe('apartment sheet', () => {
     expect(currentLocation.search).toContain('tab=building');
   });
 
-  it('schematic tab: orientation is saved per apartment and enables the sun simulation', async () => {
+  it('schematic tab (imported plan type): orientation is saved per apartment and enables the sun simulation', async () => {
     const { user } = renderApp('/?apt=A1-1&tab=schematic');
+    switchToUnmodelledApartment();
     const dialog = await screen.findByRole('dialog');
     expect(within(dialog).getByText(/בחרו כיוון כדי להפעיל/)).toBeInTheDocument();
     expect(screen.getByTestId('viewer')).toHaveAttribute('data-sun', 'null');

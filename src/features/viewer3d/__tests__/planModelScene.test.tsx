@@ -3,11 +3,23 @@ import * as THREE from 'three';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { builtInDataset } from '@/data/builtIn';
 import { loadPlanModel } from '@/data/plan-models';
-import type { PlanModel } from '@/domain/planModel';
+import {
+  FURNITURE_KINDS,
+  type PlanFurniture,
+  type PlanModel,
+  type PlanSide,
+} from '@/domain/planModel';
 import { applySun, disposeModel } from '@/features/viewer3d/apartmentModel';
 import { ApartmentViewer } from '@/features/viewer3d/ApartmentViewer';
 import { createApartmentScene, type SceneHandle } from '@/features/viewer3d/createApartmentScene';
-import { buildPlanModelScene, CLEAR_H, CUT_H } from '@/features/viewer3d/planModelScene';
+import {
+  buildFurniture,
+  buildPlanModelScene,
+  CLEAR_H,
+  CUT_H,
+  furnitureParts,
+  RAIL_H,
+} from '@/features/viewer3d/planModelScene';
 
 let model: PlanModel;
 beforeAll(async () => {
@@ -53,6 +65,37 @@ describe('buildPlanModelScene', () => {
       if (o instanceof THREE.Mesh) meshes++;
     });
     expect(meshes).toBeLessThan(40);
+  });
+
+  it('adds furniture (merged per material) and 1.05 m balcony railings', () => {
+    const m = buildPlanModelScene(model);
+    const furniture = m.scene.getObjectByName('furniture')!;
+    expect(furniture.children.length).toBeGreaterThan(2);
+    expect(furniture.children.length).toBeLessThanOrEqual(6); // one mesh per material
+    const fb = box(furniture);
+    expect(fb.min.y).toBeCloseTo(0, 2);
+    expect(fb.max.y).toBeCloseTo(2.4, 2); // the wardrobes are the tallest pieces
+    const rails = box(m.scene.getObjectByName('rails-bar')!);
+    expect(rails.max.y).toBeCloseTo(RAIL_H, 2);
+    expect(m.scene.getObjectByName('rails')).toBeDefined();
+  });
+
+  it('shapes each piece of furniture by kind, with the back on its side', () => {
+    const top = (kind: PlanFurniture['kind']) =>
+      Math.max(...furnitureParts({ kind, rect: [0, 0, 100, 200] }).map((p) => p[2]));
+    expect(top('wardrobe')).toBe(2.4);
+    expect(top('counter')).toBe(0.9);
+    expect(top('table')).toBe(0.75);
+    expect(top('fridge')).toBe(1.9);
+    expect(top('shower')).toBe(0.05);
+    for (const kind of FURNITURE_KINDS) expect(top(kind)).toBeGreaterThan(0);
+    const back = (side: PlanSide) =>
+      furnitureParts({ kind: 'sofa', rect: [0, 0, 200, 90], side })[1]![0];
+    expect(back('n')).toEqual([0, 0, 200, 20]);
+    expect(back('s')).toEqual([0, 70, 200, 20]);
+    expect(back('w')).toEqual([0, 0, 20, 90]);
+    expect(back('e')).toEqual([180, 0, 20, 90]);
+    expect(buildFurniture([])).toBeNull();
   });
 
   it('is to scale: walls 2.7 m high, plan size in metres, centred', () => {

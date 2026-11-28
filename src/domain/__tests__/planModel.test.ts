@@ -1,12 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import {
   countedRooms,
+  dimsDeviation,
   hitsWall,
   mirrorModel,
   modelSize,
   netArea,
   outdoorArea,
   type PlanModel,
+  type Rect,
   rectsArea,
   salonFacade,
   startPoint,
@@ -119,6 +121,54 @@ describe('plan model helpers', () => {
     expect(mm.entrance).toEqual([750, 790]);
     expect(netArea(mm)).toBeCloseTo(netArea(model));
     expect(mirrorModel({ ...model, entrance: null }, 'Z').entrance).toBeNull();
+  });
+
+  it('mirrors rails and furniture, swapping east and west sides', () => {
+    const m: PlanModel = {
+      ...model,
+      rails: [[0, 0, 100, 6]],
+      furniture: [
+        { kind: 'sofa', rect: [10, 10, 200, 90], side: 'w' },
+        { kind: 'bed-double', rect: [600, 100, 180, 200], side: 'n' },
+        { kind: 'table', rect: [300, 300, 100, 100] },
+      ],
+    };
+    const mm = mirrorModel(m, 'Z');
+    expect(mm.rails).toEqual([[900, 0, 100, 6]]);
+    expect(mm.furniture).toEqual([
+      { kind: 'sofa', rect: [790, 10, 200, 90], side: 'e' },
+      { kind: 'bed-double', rect: [220, 100, 180, 200], side: 'n' },
+      { kind: 'table', rect: [600, 300, 100, 100] },
+    ]);
+    // models without the optional parts stay without them
+    expect(mirrorModel(model, 'Z')).not.toHaveProperty('furniture');
+  });
+
+  it('measures how far a room is from the dimensions written on the sheet', () => {
+    const room = (rects: Rect[], dims?: [number, number]) => ({
+      id: 'r',
+      type: 'bed' as const,
+      label: '',
+      rects,
+      areaM2: 1,
+      center: [0, 0] as const,
+      ...(dims ? { dims } : {}),
+    });
+    expect(dimsDeviation(room([[0, 0, 347, 282]]))).toBeNull();
+    expect(dimsDeviation(room([[0, 0, 347, 282]], [345, 280]))).toBe(2);
+    // either orientation; the largest rect of an L-shaped room counts
+    expect(
+      dimsDeviation(
+        room(
+          [
+            [0, 0, 280, 345],
+            [0, 345, 50, 50],
+          ],
+          [345, 280],
+        ),
+      ),
+    ).toBe(0);
+    expect(dimsDeviation(room([[0, 0, 300, 300]], [345, 280]))).toBe(45);
   });
 
   it('collides with walls and starts inside the entrance', () => {

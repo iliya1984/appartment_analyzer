@@ -36,6 +36,12 @@ export function TypeSearchInput() {
           aria-describedby={hintId}
           value={text}
           onChange={(e) => setTypeQuery(e.target.value)}
+          // A search field clears itself on Escape (browser default). People press Escape to
+          // close the suggestion list, which silently dropped the filter (and so the export
+          // took every apartment). Clearing is done with the ✕ button instead.
+          onKeyDown={(e) => {
+            if (e.key === 'Escape' && text !== '') e.preventDefault();
+          }}
         />
         {text !== '' && (
           <button

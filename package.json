@@ -25,6 +25,8 @@
     "data:export": "python scripts/export_data.py",
     "plans:build": "node scripts/plans/build.mjs",
     "plans:model": "node scripts/plans/extract-model.mjs",
+    "plans:measured": "node scripts/plans/build-measured.mjs",
+    "plans:vector": "node scripts/plans/extract-vector.mjs",
     "prepare": "husky"
   },
   "dependencies": {
